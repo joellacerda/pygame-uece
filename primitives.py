@@ -1,17 +1,20 @@
 import pygame
 
-#Define a Resolução
+# Define a Resolução
 screen = pygame.display.set_mode((1280, 720))
 
-#Imprime um pixel na tela
+# Imprime um pixel na tela
 def set_pixel(x, y, color):
-    screen.set_at((x, y), color)
+    if(0 < x < screen.get_width() and 0 < y < screen.get_height()):
+        screen.set_at((x, y), color)
 
-#Ler um pixel na tela
-def read_pixel(x, y, color):
-    return screen.set_at((x, y), color)
+# Ler um pixel na tela
+def read_pixel(x, y):
+    if (0 <= x < screen.get_width() and 0 <= y < screen.get_height()):
+        return screen.get_at((x, y))
+    return None
 
-#Algoritmo de Bresenham para desenho de retas
+# Algoritmo de Bresenham para desenho de retas
 def draw_line(x0, y0, x1, y1, color):
     dx = abs(x1 - x0)
     dy = abs(y1 - y0)
@@ -33,7 +36,7 @@ def draw_line(x0, y0, x1, y1, color):
             err += dx
             y0 += sy
 
-#Algoritmo de MidPoint para desenho de círculos
+# Algoritmo de MidPoint para desenho de círculos
 def draw_circle(xc, yc, radius, color):
     x = 0
     y = - radius
@@ -56,10 +59,12 @@ def draw_circle(xc, yc, radius, color):
         set_pixel(xc - y, yc - x, color)
         x += 1
 
-#Algoritmo de Bresenham para desenho de polígonos
+# Algoritmo de Bresenham para desenho de polígonos
 def draw_polygon(vertices, color):
     n = len(vertices)
     for i in range(n):
         x0, y0 = vertices[i]
         x1, y1 = vertices[(i + 1) % n]
         draw_line(x0, y0, x1, y1, color)
+
+# TODO: Implementar Algoritmo de Anti-aliasing
