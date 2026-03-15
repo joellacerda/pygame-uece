@@ -1,5 +1,6 @@
 import pygame
 import primitives
+import filling
 
 # pygame setup
 pygame.init()
@@ -18,11 +19,13 @@ while running:
     screen.fill("black")
 
     #BLUE = (0, 0, 255)
+    #RED = (255, 0, 0)
     #primitives.draw_line(20, 20, 200, 400, BLUE)
     #primitives.draw_circle(180, 180, 50, BLUE)
     #square = [(100, 100), (300, 100), (300, 300), (100, 300)]
     #triangle = [(200, 100), (600, 100), (400, 500)]
-    #primitives.draw_polygon(triangle, BLUE)
+    #primitives.draw_polygon(square, BLUE)
+    #filling.flood_fill(200, 200, RED)
 
     # flip() the display to put your work on screen
     pygame.display.flip()
