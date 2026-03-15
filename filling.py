@@ -67,6 +67,9 @@ def scanline_fill(vertices, color):
         for edge in aet:
             edge['x_current'] += edge['inv_m']
 
+def draw_filled_polygon(vertices, fill_color, stroke_color):
+    scanline_fill(vertices, fill_color)
+    primitives.draw_polygon(vertices, stroke_color)
 
 def flood_fill(x, y, new_color):
     target_color = primitives.read_pixel(x, y)

@@ -26,6 +26,7 @@ while running:
     #triangle = [(200, 100), (600, 100), (400, 500)]
     #primitives.draw_polygon(square, BLUE)
     #filling.flood_fill(200, 200, RED)
+    #filling.draw_filled_polygon(triangle, BLUE, RED)
 
     # flip() the display to put your work on screen
     pygame.display.flip()
