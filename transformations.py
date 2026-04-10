@@ -1,6 +1,6 @@
 import math
 
-def identidade():
+def identity():
 	"""
     Retorna a matriz identidade 3x3.
     Na multiplicação de matrizes, a identidade funciona como o número 1:
@@ -12,7 +12,7 @@ def identidade():
 	[0,0,1]
 	]
 
-def translacao(tx, ty):
+def translation(tx, ty):
 	"""
     Cria uma matriz de translação 2D usando coordenadas homogêneas.
 
@@ -26,7 +26,7 @@ def translacao(tx, ty):
 	[0,0,1]
 	]
 
-def escala(sx, sy):
+def scale(sx, sy):
 	"""
     Cria uma matriz de escala 2D usando coordenadas homogêneas.
 
@@ -40,7 +40,7 @@ def escala(sx, sy):
 	[0,0,1]
 	]
 
-def rotacao(theta):
+def rotation(theta):
 	"""
     Cria uma matriz de rotação 2D usando coordenadas homogêneas.
 
@@ -57,21 +57,21 @@ def rotacao(theta):
 	[0,0,1]
 	]
 
-def cria_transformacao():
+def create_transformation():
 	"""
     Inicializa uma nova matriz de transformação cumulativa.
     Começa como a matriz identidade para que outras transformações (translação,
     rotação, escala) possam ser multiplicadas em sequência formando uma animação.
     """
-	return identidade()
+	return identity()
 
-def multiplica_matrizes(m1, m2):
+def multiply_matrices(m1, m2):
     """
     Multiplica duas matrizes 3x3.
     Útil para combinar transformações (ex: transladar e depois rotacionar)
     antes de aplicá-las aos vértices, economizando processamento.
     """
-    resultado = [
+    result = [
         [0, 0, 0],
         [0, 0, 0],
         [0, 0, 0]
@@ -79,24 +79,24 @@ def multiplica_matrizes(m1, m2):
     for i in range(3):
         for j in range(3):
             for k in range(3):
-                resultado[i][j] += m1[i][k] * m2[k][j]
-    return resultado
+                result[i][j] += m1[i][k] * m2[k][j]
+    return result
 
-def aplica_transformacao(matriz, vertices):
+def apply_transformation(matrix, vertices):
     """
     Aplica uma matriz de transformação 3x3 a uma lista de vértices 2D (x, y).
     Retorna uma nova lista com os vértices transformados (convertidos para int).
     """
-    novos_vertices = []
+    new_vertices = []
 
     for x, y in vertices:
         # Multiplicando a matriz de transformação pelo vetor coluna [x, y, 1]
-        novo_x = matriz[0][0] * x + matriz[0][1] * y + matriz[0][2] * 1
-        novo_y = matriz[1][0] * x + matriz[1][1] * y + matriz[1][2] * 1
+        novo_x = matrix[0][0] * x + matrix[0][1] * y + matrix[0][2] * 1
+        novo_y = matrix[1][0] * x + matrix[1][1] * y + matrix[1][2] * 1
 
         # O cálculo da terceira linha (W) é omitido pois em transformações afins padrão ele continua 1.
 
         # O Pygame e seu "set_pixel" precisam de coordenadas inteiras, então arredondamos
-        novos_vertices.append((int(round(novo_x)), int(round(novo_y))))
+        new_vertices.append((int(round(novo_x)), int(round(novo_y))))
 
-    return novos_vertices
+    return new_vertices
