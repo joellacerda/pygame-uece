@@ -8,6 +8,13 @@ screen = primitives.screen
 clock = pygame.time.Clock()
 running = True
 
+
+
+# 1. CARREGA AS FOTOS
+# Entra na pasta 'assets\professores' e pega o arquivo
+# matriz_guy, w_guy, h_guy = texture.load_texture("assets/professores/prof_guy_barroso.jpg")
+
+
 while running:
     # poll for events
     # pygame.QUIT event means the user clicked X to close your window
