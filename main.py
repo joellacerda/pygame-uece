@@ -27,6 +27,7 @@ while running:
     #primitives.draw_polygon(square, BLUE)
     #filling.flood_fill(200, 200, RED)
     #filling.draw_filled_polygon(triangle, BLUE, RED)
+    #primitives.draw_ellipse(400, 300, 150, 80, (0, 255, 0)) # Desenha uma elipse verde
 
     # flip() the display to put your work on screen
     pygame.display.flip()

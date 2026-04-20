@@ -122,4 +122,75 @@ def draw_polygon(vertices, color):
         x1, y1 = vertices[(i + 1) % n]
         draw_line(x0, y0, x1, y1, color)
 
+
+def draw_ellipse(xc, yc, rx, ry, color):
+    """
+    Algoritmo de Ponto Médio (MidPoint) para rasterização de elipses.
+    Divide o cálculo em duas regiões para lidar com a mudança de curvatura.
+    Explora a simetria de 4 vias (os 4 quadrantes).
+
+    Parâmetros:
+    xc, yc: Coordenadas do centro da elipse.
+    rx: Raio horizontal (semi-eixo X).
+    ry: Raio vertical (semi-eixo Y).
+    color: Tupla RGB da cor do contorno.
+    """
+    x = 0
+    y = ry
+
+    # Quadrados dos raios (calculados uma vez para otimizar)
+    rx_sq = rx * rx
+    ry_sq = ry * ry
+    two_rx_sq = 2 * rx_sq
+    two_ry_sq = 2 * ry_sq
+
+    # Variáveis para manter o controle da variação de X e Y
+    px = 0
+    py = two_rx_sq * y
+
+    # --- REGIÃO 1 ---
+    # Onde a inclinação da curva é menor que 1 (avançamos em X)
+    p1 = round(ry_sq - (rx_sq * ry) + (0.25 * rx_sq))
+    
+    while px < py:
+        # Desenha os 4 pontos simétricos
+        set_pixel(xc + x, yc + y, color)
+        set_pixel(xc - x, yc + y, color)
+        set_pixel(xc + x, yc - y, color)
+        set_pixel(xc - x, yc - y, color)
+
+        x += 1
+        px += two_ry_sq
+        
+        # Decide se ajusta o Y ou não
+        if p1 < 0:
+            p1 += ry_sq + px
+        else:
+            y -= 1
+            py -= two_rx_sq
+            p1 += ry_sq + px - py
+
+    # --- REGIÃO 2 ---
+    # Onde a inclinação da curva é maior que 1 (avançamos em Y)
+    p2 = round(ry_sq * (x + 0.5)**2 + rx_sq * (y - 1)**2 - rx_sq * ry_sq)
+    
+    while y >= 0:
+        # Desenha os 4 pontos simétricos
+        set_pixel(xc + x, yc + y, color)
+        set_pixel(xc - x, yc + y, color)
+        set_pixel(xc + x, yc - y, color)
+        set_pixel(xc - x, yc - y, color)
+
+        y -= 1
+        py -= two_rx_sq
+        
+        # Decide se ajusta o X ou não
+        if p2 > 0:
+            p2 += rx_sq - py
+        else:
+            x += 1
+            px += two_ry_sq
+            p2 += rx_sq - py + px
+
+
 # TODO: Implementar Algoritmo de Anti-aliasing
