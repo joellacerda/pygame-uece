@@ -21,4 +21,4 @@ def load_texture(caminho_da_imagem):
 
     except Exception as e:
         print(f"Erro ao carregar a imagem {caminho_da_imagem}: {e}")
-        return None, 0, 0
+        return None, 0, 0   
