@@ -1,6 +1,6 @@
 import primitives
 
-def scanline_fill(vertices, color):
+def scanline_fill(surface,vertices, color):
     """
     Algoritmo de preenchimento Scanline otimizado.
     Utiliza uma Tabela de Arestas Global (GET - Global Edge Table) para organizar
@@ -70,7 +70,7 @@ def scanline_fill(vertices, color):
                 x_start = int(round(aet[i]['x_current']))
                 x_end = int(round(aet[i+1]['x_current']))
                 for x in range(x_start, x_end):
-                    primitives.set_pixel(x, y, color)
+                    primitives.set_pixel(surface, x, y, color)
 
         # Atualizar o x_current para a próxima scanline (y + 1) incrementando a inclinação inversa
         for edge in aet:
@@ -124,7 +124,7 @@ def scanline_fill_gradient(surface, vertices, colors):
                         pixel_color = interpolate_color(color_start, color_end, t_scan)
                         primitives.set_pixel(surface, x, y, pixel_color)
 
-def draw_filled_polygon(vertices, fill_color, stroke_color):
+def draw_filled_polygon(surface, vertices, fill_color, stroke_color):
     """
     Desenha um polígono completamente preenchido e com contorno.
     Combina o algoritmo Scanline para o interior e o algoritmo de Bresenham
@@ -135,10 +135,10 @@ def draw_filled_polygon(vertices, fill_color, stroke_color):
     fill_color: Tupla RGB da cor interna (preenchimento).
     stroke_color: Tupla RGB da cor da linha de contorno.
     """
-    scanline_fill(vertices, fill_color)
-    primitives.draw_polygon(vertices, stroke_color)
+    scanline_fill(surface, vertices, fill_color)
+    primitives.draw_polygon(surface, vertices, stroke_color)
 
-def flood_fill(x, y, new_color):
+def flood_fill(surface, x, y, new_color):
     """
     Algoritmo Flood Fill (Preenchimento por Inundação) otimizado por varredura de linha (Span-based).
     Substitui uma área de cor conectada por uma nova cor. Em vez de usar recursão simples
@@ -149,7 +149,7 @@ def flood_fill(x, y, new_color):
     x, y: Coordenadas do ponto inicial (semente) do preenchimento.
     new_color: Tupla RGB da nova cor a ser aplicada.
     """
-    target_color = primitives.read_pixel(x, y)
+    target_color = primitives.read_pixel(surface, x, y)
 
     # Se a cor alvo já é a nova cor (ou está fora da tela), não faz nada
     if target_color == new_color or target_color is None:
@@ -157,21 +157,21 @@ def flood_fill(x, y, new_color):
 
     # Pilha armazena tuplas (x, y) que representam o início de um potencial segmento a verificar
     stack = [(x, y)]
-    width = primitives.screen.get_width()
+    width = surface.get_width()
 
     while stack:
         curr_x, curr_y = stack.pop()
 
         # Expandir pintando para a esquerda até encontrar uma cor diferente ou a borda
         l = curr_x
-        while l >= 0 and primitives.read_pixel(l, curr_y) == target_color:
-            primitives.set_pixel(l, curr_y, new_color)
+        while l >= 0 and primitives.read_pixel(surface, l, curr_y) == target_color:
+            primitives.set_pixel(surface, l, curr_y, new_color)
             l -= 1
 
         # Expandir pintando para a direita até encontrar uma cor diferente ou a borda
         r = curr_x + 1
-        while r < width and primitives.read_pixel(r, curr_y) == target_color:
-            primitives.set_pixel(r, curr_y, new_color)
+        while r < width and primitives.read_pixel(surface, r, curr_y) == target_color:
+            primitives.set_pixel(surface, r, curr_y, new_color)
             r += 1
 
         # Neste ponto, existe um intervalo horizontal [l+1, r-1] preenchido nesta linha.
@@ -180,7 +180,7 @@ def flood_fill(x, y, new_color):
         def check_neighbors(y_offset):
             span_added = False
             for i in range(l + 1, r):
-                if primitives.read_pixel(i, curr_y + y_offset) == target_color:
+                if primitives.read_pixel(surface, i, curr_y + y_offset) == target_color:
                     if not span_added:
                         stack.append((i, curr_y + y_offset))
                         span_added = True
@@ -189,7 +189,7 @@ def flood_fill(x, y, new_color):
 
         if curr_y > 0:
             check_neighbors(-1)  # Verifica linha Acima
-        if curr_y < primitives.screen.get_height() - 1:
+        if curr_y < surface.get_height() - 1:
             check_neighbors(1)   # Verifica linha Abaixo
 
 def interpolate_color(c1, c2, t):

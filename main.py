@@ -27,9 +27,8 @@ matriz_rafael, larg_rafael, alt_rafael = texture.load_texture("assets\professore
 matriz_rivas, larg_rivas, alt_rivas = texture.load_texture("assets\professores\prof_rivas.png")
 matriz_thelmo, larg_thelmo, alt_thelmo = texture.load_texture("assets\professores\prof_thelmo.png")
 
-
-# Função desenha carta usando primitives.set_pixel para imprimir a matriz da foto
-def desenhar_carta_com_foto(x_base, y_base, largura_carta, altura_carta, matriz_foto, larg_foto, alt_foto, cor_fundo=(255, 255, 255), cor_borda=(0, 0, 0)):
+# Adicione o parâmetro 'surface' na função
+def desenhar_carta_com_foto(surface, x_base, y_base, largura_carta, altura_carta, matriz_foto, larg_foto, alt_foto, cor_fundo=(255, 255, 255), cor_borda=(0, 0, 0)):
     # 1. Desenha o Polígono da Carta (Fundo e Borda)
     vertices_carta = [
         (x_base, y_base),
@@ -37,10 +36,11 @@ def desenhar_carta_com_foto(x_base, y_base, largura_carta, altura_carta, matriz_
         (x_base + largura_carta, y_base + altura_carta),
         (x_base, y_base + altura_carta)
     ]
-    filling.draw_filled_polygon(vertices_carta, cor_fundo, cor_borda)
-    primitives.draw_polygon(vertices_carta, cor_borda)
 
-    # 2. Mapeamento da foto (Recorte proporcional)
+    # Passa a surface para o preenchimento
+    filling.draw_filled_polygon(surface, vertices_carta, cor_fundo, cor_borda)
+
+    # 2. Mapeamento da foto
     if matriz_foto is not None:
         razao_x = larg_foto / largura_carta
         razao_y = alt_foto / altura_carta
@@ -61,8 +61,8 @@ def desenhar_carta_com_foto(x_base, y_base, largura_carta, altura_carta, matriz_
                     foto_y = max(0, min(foto_y, alt_foto - 1))
 
                     cor_pixel = matriz_foto[foto_x][foto_y]
-                    primitives.set_pixel(x_base + i, y_base + j, cor_pixel)
-
+                    # Passa a surface para o set_pixel
+                    primitives.set_pixel(surface, x_base + i, y_base + j, cor_pixel)
 # CLASSE CARTA
 class Carta:
     def __init__(self, x, y, id_prof, matriz_foto, w_foto, h_foto):
@@ -76,14 +76,14 @@ class Carta:
         self.h_foto = h_foto
         self.estado = 0 # 0 = Verso (UECE), 1 = Virada (Prof), 2 = Par Encontrado
 
-    def desenhar(self, matriz_verso, w_verso, h_verso):
+    def desenhar(self, surface, matriz_verso, w_verso, h_verso):
         """A carta usa a função molde acima para se desenhar sozinha"""
         if self.estado == 0:
             # Estado 0: Passa a matriz da logo da UECE (e podemos mudar a cor de fundo do verso aqui)
-            desenhar_carta_com_foto(self.x, self.y, self.largura, self.altura, matriz_verso, w_verso, h_verso, cor_fundo=(200, 200, 200))
+            desenhar_carta_com_foto(surface, self.x, self.y, self.largura, self.altura, matriz_verso, w_verso, h_verso, cor_fundo=(200, 200, 200))
         else:
             # Estados 1 e 2: Passa a matriz da foto do professor
-            desenhar_carta_com_foto(self.x, self.y, self.largura, self.altura, self.matriz_foto, self.w_foto, self.h_foto)
+            desenhar_carta_com_foto(surface, self.x, self.y, self.largura, self.altura, self.matriz_foto, self.w_foto, self.h_foto)
 
 
 # Cria uma instância da carta na posição X=150, Y=100
@@ -96,7 +96,7 @@ cartas_na_mesa = [carta_teste, carta_teste2] # Se tiver 24, basta colocar todas 
 # 1. DESENHA A MESA INTEIRA UMA ÚNICA VEZ ANTES DO JOGO COMEÇAR!
 screen.fill((40, 100, 60))
 for carta in cartas_na_mesa:
-    carta.desenhar(matriz_verso, larg_verso, alt_verso)
+    carta.desenhar(screen, matriz_verso, larg_verso, alt_verso)
 pygame.display.flip() # Joga o desenho pra tela
 
 
@@ -154,7 +154,7 @@ while running:
 
                     # 3. REDESENHA APENAS A CARTA QUE FOI CLICADA!
                     # O resto da mesa continua lá, não precisamos mexer
-                    carta.desenhar(matriz_verso, larg_verso, alt_verso)
+                    carta.desenhar(screen, matriz_verso, larg_verso, alt_verso)
 
                     # Atualiza a tela imediatamente após pintar essa única carta
                     pygame.display.flip()

@@ -3,7 +3,7 @@ import pygame
 # Define a Resolução da janela principal
 screen = pygame.display.set_mode((1280, 720))
 
-def set_pixel(x, y, color):
+def set_pixel(surface, x, y, color):
     """
     Pinta um único pixel na tela com a cor especificada.
     Esta é a base para todos os algoritmos de rasterização do trabalho.
@@ -12,10 +12,10 @@ def set_pixel(x, y, color):
     x, y: Coordenadas inteiras do pixel.
     color: Tupla RGB representando a cor (ex: (255, 0, 0) para vermelho).
     """
-    if (0 <= x < screen.get_width() and 0 <= y < screen.get_height()):
-        screen.set_at((x, y), color)
+    if (0 <= x < surface.get_width() and 0 <= y < surface.get_height()):
+        surface.set_at((x, y), color)
 
-def read_pixel(x, y):
+def read_pixel(surface, x, y):
     """
     Lê a cor de um pixel específico na tela.
     Essencial para o algoritmo de preenchimento Flood Fill, que precisa
@@ -27,10 +27,10 @@ def read_pixel(x, y):
     Retorna:
     A cor (Color object do Pygame) ou None se estiver fora da tela.
     """
-    if (0 <= x < screen.get_width() and 0 <= y < screen.get_height()):
-        return screen.get_at((x, y))
+    if (0 <= x < surface.get_width() and 0 <= y < surface.get_height()):
+        return surface.get_at((x, y))
 
-def draw_line(x0, y0, x1, y1, color):
+def draw_line(surface, x0, y0, x1, y1, color):
     """
     Algoritmo de Bresenham para rasterização de retas.
     Usa apenas matemática inteira (adição, subtração e bitshift) para decidir
@@ -53,7 +53,7 @@ def draw_line(x0, y0, x1, y1, color):
     err = dx - dy
 
     while True:
-        set_pixel(x0, y0, color)
+        set_pixel(surface, x0, y0, color)
 
         # Se chegou no ponto final, encerra o loop
         if x0 == x1 and y0 == y1:
@@ -69,7 +69,7 @@ def draw_line(x0, y0, x1, y1, color):
             err += dx
             y0 += sy
 
-def draw_circle(xc, yc, radius, color):
+def draw_circle(surface, xc, yc, radius, color):
     """
     Algoritmo de MidPoint (Ponto Médio) para rasterização de circunferências.
     Explora a simetria de 8 vias do círculo: calcula as coordenadas para um
@@ -95,19 +95,19 @@ def draw_circle(xc, yc, radius, color):
             p += 2 * x + 1
 
         # Desenha os 8 pontos simétricos usando o centro (xc, yc) como referência
-        set_pixel(xc + x, yc + y, color)
-        set_pixel(xc - x, yc + y, color)
-        set_pixel(xc + x, yc - y, color)
-        set_pixel(xc - x, yc - y, color)
-        set_pixel(xc + y, yc + x, color)
-        set_pixel(xc - y, yc + x, color)
-        set_pixel(xc + y, yc - x, color)
-        set_pixel(xc - y, yc - x, color)
+        set_pixel(surface, xc + x, yc + y, color)
+        set_pixel(surface, xc - x, yc + y, color)
+        set_pixel(surface, xc + x, yc - y, color)
+        set_pixel(surface, xc - x, yc - y, color)
+        set_pixel(surface, xc + y, yc + x, color)
+        set_pixel(surface, xc - y, yc + x, color)
+        set_pixel(surface, xc + y, yc - x, color)
+        set_pixel(surface, xc - y, yc - x, color)
 
         # Avança sempre no eixo X (do topo para o lado)
         x += 1
 
-def draw_polygon(vertices, color):
+def draw_polygon(surface, vertices, color):
     """
     Desenha o contorno de um polígono conectando seus vértices.
 
@@ -120,10 +120,10 @@ def draw_polygon(vertices, color):
         x0, y0 = vertices[i]
         # O módulo '% n' garante que o último vértice se conecte de volta ao primeiro
         x1, y1 = vertices[(i + 1) % n]
-        draw_line(x0, y0, x1, y1, color)
+        draw_line(surface, x0, y0, x1, y1, color)
 
 
-def draw_ellipse(xc, yc, rx, ry, color):
+def draw_ellipse(surface, xc, yc, rx, ry, color):
     """
     Algoritmo de Ponto Médio (MidPoint) para rasterização de elipses.
     Divide o cálculo em duas regiões para lidar com a mudança de curvatura.
@@ -151,17 +151,17 @@ def draw_ellipse(xc, yc, rx, ry, color):
     # --- REGIÃO 1 ---
     # Onde a inclinação da curva é menor que 1 (avançamos em X)
     p1 = round(ry_sq - (rx_sq * ry) + (0.25 * rx_sq))
-    
+
     while px < py:
         # Desenha os 4 pontos simétricos
-        set_pixel(xc + x, yc + y, color)
-        set_pixel(xc - x, yc + y, color)
-        set_pixel(xc + x, yc - y, color)
-        set_pixel(xc - x, yc - y, color)
+        set_pixel(surface, xc + x, yc + y, color)
+        set_pixel(surface, xc - x, yc + y, color)
+        set_pixel(surface, xc + x, yc - y, color)
+        set_pixel(surface, xc - x, yc - y, color)
 
         x += 1
         px += two_ry_sq
-        
+
         # Decide se ajusta o Y ou não
         if p1 < 0:
             p1 += ry_sq + px
@@ -173,17 +173,17 @@ def draw_ellipse(xc, yc, rx, ry, color):
     # --- REGIÃO 2 ---
     # Onde a inclinação da curva é maior que 1 (avançamos em Y)
     p2 = round(ry_sq * (x + 0.5)**2 + rx_sq * (y - 1)**2 - rx_sq * ry_sq)
-    
+
     while y >= 0:
         # Desenha os 4 pontos simétricos
-        set_pixel(xc + x, yc + y, color)
-        set_pixel(xc - x, yc + y, color)
-        set_pixel(xc + x, yc - y, color)
-        set_pixel(xc - x, yc - y, color)
+        set_pixel(surface, xc + x, yc + y, color)
+        set_pixel(surface, xc - x, yc + y, color)
+        set_pixel(surface, xc + x, yc - y, color)
+        set_pixel(surface, xc - x, yc - y, color)
 
         y -= 1
         py -= two_rx_sq
-        
+
         # Decide se ajusta o X ou não
         if p2 > 0:
             p2 += rx_sq - py

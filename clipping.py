@@ -59,7 +59,7 @@ def cohen_sutherland_clip(x0, y0, x1, y1, window):
             x1, y1 = x, y
             c1 = region_code(x1, y1, xmin, ymin, xmax, ymax)
 
-def draw_clipped_polygon(vertices, window, color):
+def draw_clipped_polygon(surface, vertices, window, color):
     """
     Desenha o contorno de um polígono, garantindo que apenas as partes
     dentro da janela de recorte sejam desenhadas.
@@ -77,4 +77,4 @@ def draw_clipped_polygon(vertices, window, color):
 
         if visible:
             # Se for visível (total ou parcial), manda pro Bresenham
-            primitives.draw_line(int(rx0), int(ry0), int(rx1), int(ry1), color)
+            primitives.draw_line(surface, int(rx0), int(ry0), int(rx1), int(ry1), color)
