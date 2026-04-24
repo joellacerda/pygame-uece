@@ -1,59 +1,64 @@
+import transformations
+
 class Camera:
-    def __init__(self, w_min_x, w_min_y, w_max_x, w_max_y, v_min_x, v_min_y, v_max_x, v_max_y):
-        # Janela (Coordenadas de Mundo) - A área do tabuleiro que estamos "filmando"
-        self.w_min_x = w_min_x
-        self.w_min_y = w_min_y
-        self.w_max_x = w_max_x
-        self.w_max_y = w_max_y
-
-        # Viewport (Coordenadas de Dispositivo) - A área da tela onde o desenho vai aparecer
-        self.v_min_x = v_min_x
-        self.v_min_y = v_min_y
-        self.v_max_x = v_max_x
-        self.v_max_y = v_max_y
-
-    def world_to_viewport(self, x_world, y_world):
+    """
+    Representa uma câmera no sistema de Computação Gráfica.
+    Coordena a transformação entre o Espaço de Mundo (Janela) e o
+    Espaço de Dispositivo (Viewport) usando matrizes homogêneas.
+    """
+    def __init__(self, window, viewport):
         """
-        Converte um ponto do Mundo Real (tabuleiro) para o Dispositivo (tela do Pygame).
+        Inicializa a câmera com as coordenadas de Janela e Viewport.
+
+        Parâmetros:
+        window: lista ou tupla [xmin, ymin, xmax, ymax] no mundo real.
+        viewport: lista ou tupla [xmin, ymin, xmax, ymax] na tela do Pygame.
         """
-        # Calcula as proporções (escala) entre a Tela e a Janela
-        sx = (self.v_max_x - self.v_min_x) / (self.w_max_x - self.w_min_x)
-        sy = (self.v_max_y - self.v_min_y) / (self.w_max_y - self.w_min_y)
+        self.window = list(window)
+        self.viewport = list(viewport)
 
-        # Aplica a fórmula de mapeamento linear
-        x_viewport = self.v_min_x + (x_world - self.w_min_x) * sx
-        y_viewport = self.v_min_y + (y_world - self.w_min_y) * sy
-
-        return int(round(x_viewport)), int(round(y_viewport))
+    def get_matrix(self):
+        """
+        Retorna a matriz 3x3 de transformação Janela-Viewport.
+        Baseada na lógica de inversão de Y e escala ensinada pelo professor.
+        """
+        return transformations.window_to_viewport(self.window, self.viewport)
 
     def pan(self, dx, dy):
         """
-        Move a câmera pelo mundo (Translação da Janela).
-        Isso atende ao requisito de interatividade de navegação.
+        Move a lente da câmera pelo mundo (Translação da Janela).
         """
-        self.w_min_x += dx
-        self.w_max_x += dx
-        self.w_min_y += dy
-        self.w_max_y += dy
+        self.window[0] += dx
+        self.window[2] += dx
+        self.window[1] += dy
+        self.window[3] += dy
 
     def zoom(self, factor):
         """
-        Aplica zoom na câmera (Escala da Janela).
-        Fator < 1: Zoom In (vê menos do mundo, as cartas ficam maiores)
-        Fator > 1: Zoom Out (vê mais do mundo, as cartas ficam menores)
+        Aplica zoom em relação ao centro da visualização atual.
+        factor < 1.0: Aproxima (Zoom In)
+        factor > 1.0: Afasta (Zoom Out)
         """
-        width = self.w_max_x - self.w_min_x
-        height = self.w_max_y - self.w_min_y
+        width = self.window[2] - self.window[0]
+        height = self.window[3] - self.window[1]
 
-        # Descobre o centro atual da câmera para dar zoom em direção ao centro
-        cx = self.w_min_x + width / 2
-        cy = self.w_min_y + height / 2
+        # Encontra o ponto central da janela
+        cx = self.window[0] + width / 2
+        cy = self.window[1] + height / 2
 
-        nova_largura = width * factor
-        nova_altura = height * factor
+        # Calcula as novas dimensões
+        new_w = width * factor
+        new_h = height * factor
 
-        # Atualiza as bordas da janela com o novo tamanho
-        self.w_min_x = cx - nova_largura / 2
-        self.w_max_x = cx + nova_largura / 2
-        self.w_min_y = cy - nova_altura / 2
-        self.w_max_y = cy + nova_altura / 2
+        # Define as novas bordas mantendo o centro
+        self.window[0] = cx - new_w / 2
+        self.window[2] = cx + new_w / 2
+        self.window[1] = cy - new_h / 2
+        self.window[3] = cy + new_h / 2
+
+    def apply(self, points):
+        """
+        Facilitador para aplicar a visualização da câmera a uma lista de pontos.
+        """
+        matrix = self.get_matrix()
+        return transformations.apply_transformation(matrix, points)
