@@ -1,3 +1,4 @@
+from pathlib import Path
 import pygame
 import primitives
 import filling
@@ -12,20 +13,19 @@ running = True
 
 
 # CARREGA AS FOTOS: Entra na pasta 'assets\professores' e pega o arquivo
-matriz_verso, larg_verso, alt_verso = texture.load_texture("assets\professores\logo_uece.png")
-
-matriz_paixao, larg_paixao, alt_paixao = texture.load_texture("assets\professores\prof_matheus_paixao.png")
-matriz_guy, larg_guy, alt_guy = texture.load_texture("assets\professores\prof_guy_barroso.png")
-matriz_ana, larg_ana, alt_ana = texture.load_texture("assets\professores\prof_ana_luiza.png")
-matriz_henrique, larg_henrique, alt_henrique = texture.load_texture("assets\professores\prof_henrique.png")
-matriz_ismayle, larg_ismayle, alt_ismayle = texture.load_texture("assets\professores\prof_ismayle.png")
-matriz_marcos, larg_marcos, alt_marcos = texture.load_texture("assets\professores\prof_marcos_negreiros.png")
-matriz_matheus, larg_matheus, alt_matheus = texture.load_texture("assets\professores\prof_matheus_santos.png")
-matriz_paulo, larg_paulo, alt_paulo = texture.load_texture("assets\professores\prof_paulo_henrique_maia.png")
-matriz_pereira, larg_pereira, alt_pereira = texture.load_texture("assets\professores\prof_pereira.png")
-matriz_rafael, larg_rafael, alt_rafael = texture.load_texture("assets\professores\prof_rafael.png")
-matriz_rivas, larg_rivas, alt_rivas = texture.load_texture("assets\professores\prof_rivas.png")
-matriz_thelmo, larg_thelmo, alt_thelmo = texture.load_texture("assets\professores\prof_thelmo.png")
+matriz_verso, larg_verso, alt_verso = texture.load_texture(Path(__file__).parent /"assets"/"professores"/"uece.png")
+matriz_paixao, larg_paixao, alt_paixao = texture.load_texture(Path(__file__).parent /"assets"/"professores"/"matheus_paixao.png")
+matriz_guy, larg_guy, alt_guy = texture.load_texture(Path(__file__).parent /"assets"/"professores"/"guy_barroso.png")
+matriz_ana, larg_ana, alt_ana = texture.load_texture(Path(__file__).parent /"assets"/"professores"/"ana_luiza.png")
+matriz_henrique, larg_henrique, alt_henrique = texture.load_texture(Path(__file__).parent /"assets"/"professores"/"henrique.png")
+matriz_ismayle, larg_ismayle, alt_ismayle = texture.load_texture(Path(__file__).parent /"assets"/"professores"/"ismayle.png")
+matriz_marcos, larg_marcos, alt_marcos = texture.load_texture(Path(__file__).parent /"assets"/"professores"/"marcos_negreiros.png")
+matriz_matheus, larg_matheus, alt_matheus = texture.load_texture(Path(__file__).parent /"assets"/"professores"/"matheus_santos.png")
+matriz_paulo, larg_paulo, alt_paulo = texture.load_texture(Path(__file__).parent /"assets"/"professores"/"paulo_henrique_maia.png")
+matriz_pereira, larg_pereira, alt_pereira = texture.load_texture(Path(__file__).parent /"assets"/"professores"/"pereira.png")
+matriz_rafael, larg_rafael, alt_rafael = texture.load_texture(Path(__file__).parent /"assets"/"professores"/"rafael.png")
+matriz_rivas, larg_rivas, alt_rivas = texture.load_texture(Path(__file__).parent /"assets"/"professores"/"rivas.png")
+matriz_thelmo, larg_thelmo, alt_thelmo = texture.load_texture(Path(__file__).parent /"assets"/"professores"/"thelmo.png")
 
 # Adicione o parâmetro 'surface' na função
 def desenhar_carta_com_foto(surface, x_base, y_base, largura_carta, altura_carta, matriz_foto, larg_foto, alt_foto, cor_fundo=(255, 255, 255), cor_borda=(0, 0, 0)):
