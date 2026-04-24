@@ -23,7 +23,7 @@ matriz_marcos, larg_marcos, alt_marcos = texture.load_texture("assets\professore
 matriz_matheus, larg_matheus, alt_matheus = texture.load_texture("assets\professores\prof_matheus_santos.png")
 matriz_paulo, larg_paulo, alt_paulo = texture.load_texture("assets\professores\prof_paulo_henrique_maia.png")
 matriz_pereira, larg_pereira, alt_pereira = texture.load_texture("assets\professores\prof_pereira.png")
-matriz_rafae, larg_rafae, alt_rafae = texture.load_texture("assets\professores\prof_rafael.png")
+matriz_rafael, larg_rafael, alt_rafael = texture.load_texture("assets\professores\prof_rafael.png")
 matriz_rivas, larg_rivas, alt_rivas = texture.load_texture("assets\professores\prof_rivas.png")
 matriz_thelmo, larg_thelmo, alt_thelmo = texture.load_texture("assets\professores\prof_thelmo.png")
 
@@ -32,9 +32,9 @@ matriz_thelmo, larg_thelmo, alt_thelmo = texture.load_texture("assets\professore
 def desenhar_carta_com_foto(x_base, y_base, largura_carta, altura_carta, matriz_foto, larg_foto, alt_foto, cor_fundo=(255, 255, 255), cor_borda=(0, 0, 0)):
     # 1. Desenha o Polígono da Carta (Fundo e Borda)
     vertices_carta = [
-        (x_base, y_base), 
-        (x_base + largura_carta, y_base), 
-        (x_base + largura_carta, y_base + altura_carta), 
+        (x_base, y_base),
+        (x_base + largura_carta, y_base),
+        (x_base + largura_carta, y_base + altura_carta),
         (x_base, y_base + altura_carta)
     ]
     filling.draw_filled_polygon(vertices_carta, cor_fundo, cor_borda)
@@ -53,7 +53,7 @@ def desenhar_carta_com_foto(x_base, y_base, largura_carta, altura_carta, matriz_
             for j in range(altura_carta):
                 margem = 5
                 if i > margem and i < largura_carta - margem and j > margem and j < altura_carta - margem:
-                    
+
                     foto_x = int(i * razao_unica) + offset_x_foto
                     foto_y = int(j * razao_unica) + offset_y_foto
 
@@ -70,7 +70,7 @@ class Carta:
         self.y = y
         self.largura = 140
         self.altura = 180
-        self.id_prof = id_prof 
+        self.id_prof = id_prof
         self.matriz_foto = matriz_foto
         self.w_foto = w_foto
         self.h_foto = h_foto
@@ -94,7 +94,7 @@ cartas_na_mesa = [carta_teste, carta_teste2] # Se tiver 24, basta colocar todas 
 
 
 # 1. DESENHA A MESA INTEIRA UMA ÚNICA VEZ ANTES DO JOGO COMEÇAR!
-screen.fill((40, 100, 60)) 
+screen.fill((40, 100, 60))
 for carta in cartas_na_mesa:
     carta.desenhar(matriz_verso, larg_verso, alt_verso)
 pygame.display.flip() # Joga o desenho pra tela
@@ -107,12 +107,12 @@ pygame.display.flip() # Joga o desenho pra tela
 while running:
     # poll for events
     # pygame.QUIT event means the user clicked X to close your window
-    
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
-    
+
     # fill the screen with a color to wipe away anything from last frame
     #screen.fill("black")
     #BLUE = (0, 0, 255)
@@ -127,41 +127,41 @@ while running:
     #primitives.draw_ellipse(400, 300, 150, 80, (0, 255, 0)) # Desenha uma elipse verde
 
     # flip() the display to put your work on screen
-    
-    
+
+
     # Desenhamos a primeira carta na posição X=50
     #desenhar_carta_com_foto(30, 100, 150, 200, matriz_paixao, larg_paixao, alt_paixao)
     #desenhar_carta_com_foto(200, 100, 150, 200, matriz_guy, larg_guy, alt_guy)
     #desenhar_carta_com_foto(370, 100, 150, 200, matriz_paixao, larg_paixao, alt_paixao)
     #desenhar_carta_com_foto(540, 100, 150, 200, matriz_guy, larg_guy, alt_guy)
-    
-    
+
+
 
         if event.type == pygame.MOUSEBUTTONDOWN:
             mouse_x, mouse_y = pygame.mouse.get_pos()
-            
+
             for carta in cartas_na_mesa:
                 atingiu_x = carta.x <= mouse_x <= (carta.x + carta.largura)
                 atingiu_y = carta.y <= mouse_y <= (carta.y + carta.altura)
-                
+
                 if atingiu_x and atingiu_y:
-                    
+
                     # 2. INVERTE O ESTADO
                     if carta.estado == 0:
                         carta.estado = 1
                     else:
                         carta.estado = 0
-                        
+
                     # 3. REDESENHA APENAS A CARTA QUE FOI CLICADA!
                     # O resto da mesa continua lá, não precisamos mexer
                     carta.desenhar(matriz_verso, larg_verso, alt_verso)
-                    
+
                     # Atualiza a tela imediatamente após pintar essa única carta
-                    pygame.display.flip() 
-                    
+                    pygame.display.flip()
+
                     break # Para de procurar colisões
-    
-    
+
+
 
 
     #pygame.display.flip()
