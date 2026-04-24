@@ -76,6 +76,54 @@ def scanline_fill(vertices, color):
         for edge in aet:
             edge['x_current'] += edge['inv_m']
 
+def scanline_fill_gradient(surface, vertices, colors):
+    """
+    Algoritmo de preenchimento Scanline com suporte a gradiente por vértice.
+    Interpola as cores ao longo das arestas (Y) e depois ao longo da linha de varredura (X).
+    """
+
+    ys = [v[1] for v in vertices]
+    y_min = int(min(ys))
+    y_max = int(max(ys))
+    n = len(vertices)
+
+    for y in range(y_min, y_max):
+        intersections = []
+        for i in range(n):
+            p0, p1 = vertices[i], vertices[(i + 1) % n]
+            c0, c1 = colors[i], colors[(i + 1) % n]
+
+            # Ignora arestas horizontais
+            if p0[1] == p1[1]: continue
+
+            # Garante que p0 é o ponto superior (menor Y)
+            if p0[1] > p1[1]:
+                p0, p1, c0, c1 = p1, p0, c1, c0
+
+            # Verifica se a scanline atual cruza a aresta
+            if p0[1] <= y < p1[1]:
+                t_edge = (y - p0[1]) / (p1[1] - p0[1])
+                x_inter = p0[0] + t_edge * (p1[0] - p0[0])
+                color_inter = interpolate_color(c0, c1, t_edge)
+                intersections.append((x_inter, color_inter))
+
+        # Ordena as interseções pela coordenada X
+        intersections.sort(key=lambda item: item[0])
+
+        # Preenche entre os pares de interseções
+        for i in range(0, len(intersections), 2):
+            if i + 1 < len(intersections):
+                x_start, color_start = intersections[i]
+                x_end, color_end = intersections[i + 1]
+
+                # Interpola a cor horizontalmente entre as duas arestas
+                dist_x = x_end - x_start
+                if dist_x > 0:
+                    for x in range(int(x_start), int(x_end) + 1):
+                        t_scan = (x - x_start) / dist_x
+                        pixel_color = interpolate_color(color_start, color_end, t_scan)
+                        primitives.set_pixel(surface, x, y, pixel_color)
+
 def draw_filled_polygon(vertices, fill_color, stroke_color):
     """
     Desenha um polígono completamente preenchido e com contorno.
@@ -143,3 +191,12 @@ def flood_fill(x, y, new_color):
             check_neighbors(-1)  # Verifica linha Acima
         if curr_y < primitives.screen.get_height() - 1:
             check_neighbors(1)   # Verifica linha Abaixo
+
+def interpolate_color(c1, c2, t):
+    """
+    Interpola linearmente entre duas cores RGB baseando-se no fator t (0.0 a 1.0).
+    """
+    r = int(c1[0] + (c2[0] - c1[0]) * t)
+    g = int(c1[1] + (c2[1] - c1[1]) * t)
+    b = int(c1[2] + (c2[2] - c1[2]) * t)
+    return (r, g, b)
