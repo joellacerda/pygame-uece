@@ -1,81 +1,80 @@
-# Definindo as regiões usando bits (TBRL - Top, Bottom, Right, Left)
+import primitives
+
+# Constantes de bits para as regiões (TBRL)
 INSIDE = 0  # 0000
 LEFT   = 1  # 0001
 RIGHT  = 2  # 0010
 BOTTOM = 4  # 0100
 TOP    = 8  # 1000
 
-def compute_outcode(x, y, x_min, y_min, x_max, y_max):
+def region_code(x, y, xmin, ymin, xmax, ymax):
     """
-    Calcula o código de região (Outcode) de 4 bits para um ponto (x,y).
+    Calcula o código da região para um ponto (x,y) em relação à janela.
     """
     code = INSIDE
-
-    if x < x_min:      # À esquerda da janela
-        code |= LEFT
-    elif x > x_max:    # À direita da janela
-        code |= RIGHT
-
-    if y < y_min:      # Acima da janela
-        code |= TOP
-    elif y > y_max:    # Abaixo da janela
-        code |= BOTTOM
-
+    if x < xmin: code |= LEFT
+    elif x > xmax: code |= RIGHT
+    if y < ymin: code |= TOP      # y cresce para baixo no Pygame
+    elif y > ymax: code |= BOTTOM
     return code
 
-def cohen_sutherland_clip(x1, y1, x2, y2, x_min, y_min, x_max, y_max):
+def cohen_sutherland_clip(x0, y0, x1, y1, window):
     """
-    Recorta uma linha para caber dentro da janela especificada.
-    Retorna (novo_x1, novo_y1, novo_x2, novo_y2) se a linha for visível,
-    ou None se a linha estiver completamente fora da tela.
+    Algoritmo de Recorte de Cohen-Sutherland.
+    Retorna uma tupla: (visivel, novo_x0, novo_y0, novo_x1, novo_y1)
     """
-    code1 = compute_outcode(x1, y1, x_min, y_min, x_max, y_max)
-    code2 = compute_outcode(x2, y2, x_min, y_min, x_max, y_max)
-    accept = False
+    xmin, ymin, xmax, ymax = window
+    c0 = region_code(x0, y0, xmin, ymin, xmax, ymax)
+    c1 = region_code(x1, y1, xmin, ymin, xmax, ymax)
 
     while True:
-        if code1 == 0 and code2 == 0:
-            # Aceitação Trivial: ambos os pontos estão dentro
-            accept = True
-            break
-        elif (code1 & code2) != 0:
-            # Rejeição Trivial: ambos estão do mesmo lado de fora (ex: os dois acima do topo)
-            break
+        if not (c0 | c1):
+            return True, x0, y0, x1, y1  # A linha está totalmente visível
+
+        if c0 & c1:
+            return False, None, None, None, None  # A linha está totalmente fora
+
+        # Escolhe um ponto que está fora da janela
+        c_out = c0 if c0 else c1
+
+        # Calcula a interseção
+        if c_out & TOP:
+            x = x0 + (x1 - x0) * (ymin - y0) / (y1 - y0)
+            y = ymin
+        elif c_out & BOTTOM:
+            x = x0 + (x1 - x0) * (ymax - y0) / (y1 - y0)
+            y = ymax
+        elif c_out & RIGHT:
+            y = y0 + (y1 - y0) * (xmax - x0) / (x1 - x0)
+            x = xmax
+        elif c_out & LEFT:
+            y = y0 + (y1 - y0) * (xmin - x0) / (x1 - x0)
+            x = xmin
+
+        # Substitui o ponto fora da janela pelo ponto de interseção e recalcula
+        if c_out == c0:
+            x0, y0 = x, y
+            c0 = region_code(x0, y0, xmin, ymin, xmax, ymax)
         else:
-            # Pelo menos um ponto está fora. Vamos encontrar a interseção.
-            x, y = 0.0, 0.0
+            x1, y1 = x, y
+            c1 = region_code(x1, y1, xmin, ymin, xmax, ymax)
 
-            # Escolhe o ponto que está fora da janela
-            code_out = code1 if code1 != 0 else code2
+def draw_clipped_polygon(vertices, window, color):
+    """
+    Desenha o contorno de um polígono, garantindo que apenas as partes
+    dentro da janela de recorte sejam desenhadas.
+    """
+    n = len(vertices)
 
-            # Fórmulas de interseção de reta:
-            # y = y1 + m * (x - x1)  -->  m é a inclinação (y2 - y1) / (x2 - x1)
-            # x = x1 + (1 / m) * (y - y1)
+    for i in range(n):
+        x0, y0 = vertices[i]
+        x1, y1 = vertices[(i + 1) % n]
 
-            if code_out & TOP:           # Interseção com o topo
-                x = x1 + (x2 - x1) * (y_min - y1) / (y2 - y1)
-                y = y_min
-            elif code_out & BOTTOM:      # Interseção com a base
-                x = x1 + (x2 - x1) * (y_max - y1) / (y2 - y1)
-                y = y_max
-            elif code_out & RIGHT:       # Interseção com a direita
-                y = y1 + (y2 - y1) * (x_max - x1) / (x2 - x1)
-                x = x_max
-            elif code_out & LEFT:        # Interseção com a esquerda
-                y = y1 + (y2 - y1) * (x_min - x1) / (x2 - x1)
-                x = x_min
+        # Corta a aresta atual usando a Janela
+        visible, rx0, ry0, rx1, ry1 = cohen_sutherland_clip(
+            x0, y0, x1, y1, window
+        )
 
-            # Agora substituímos o ponto que estava fora pelo novo ponto na borda
-            if code_out == code1:
-                x1, y1 = x, y
-                code1 = compute_outcode(x1, y1, x_min, y_min, x_max, y_max)
-            else:
-                x2, y2 = x, y
-                code2 = compute_outcode(x2, y2, x_min, y_min, x_max, y_max)
-
-    if accept:
-        # Se a linha sobreviveu, retornamos as novas coordenadas arredondadas
-        return (int(round(x1)), int(round(y1)), int(round(x2)), int(round(y2)))
-    else:
-        # A linha inteira estava fora, ignoramos
-        return None
+        if visible:
+            # Se for visível (total ou parcial), manda pro Bresenham
+            primitives.draw_line(int(rx0), int(ry0), int(rx1), int(ry1), color)

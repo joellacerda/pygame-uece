@@ -100,3 +100,34 @@ def apply_transformation(matrix, vertices):
         new_vertices.append((int(round(novo_x)), int(round(novo_y))))
 
     return new_vertices
+
+def window_to_viewport(window, viewport):
+    """
+    Gera a matriz de transformação de Janela (Coordenadas de Mundo)
+    para Viewport (Coordenadas de Tela/Dispositivo).
+
+    Parâmetros:
+    window: tupla (Wxmin, Wymin, Wxmax, Wymax)
+    viewport: tupla (Vxmin, Vymin, Vxmax, Vymax)
+    """
+    Wxmin, Wymin, Wxmax, Wymax = window
+    Vxmin, Vymin, Vxmax, Vymax = viewport
+
+    # Calcula a escala entre a Viewport e a Janela
+    sx = (Vxmax - Vxmin) / (Wxmax - Wxmin)
+    # A inversão do Y abaixo garante que o sistema cartesiano tradicional
+    # seja adaptado para o sistema do Pygame (onde o Y cresce para baixo)
+    sy = (Vymin - Vymax) / (Wymax - Wymin)
+
+    m = identity()
+
+    # 1. Translada a janela para a origem
+    m = multiply_matrices(translation(-Wxmin, -Wymin), m)
+
+    # 2. Aplica a escala para caber na Viewport
+    m = multiply_matrices(scale(sx, sy), m)
+
+    # 3. Translada para a posição correta da Viewport na tela
+    m = multiply_matrices(translation(Vxmin, Vymax), m)
+
+    return m
