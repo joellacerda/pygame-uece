@@ -1,4 +1,4 @@
-import primitives
+from . import primitives
 
 # Constantes de bits para as regiões (TBRL)
 INSIDE = 0  # 0000

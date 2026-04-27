@@ -1,4 +1,4 @@
-import primitives
+from . import primitives
 
 def scanline_fill(surface,vertices, color):
     """

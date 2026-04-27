@@ -1,8 +1,6 @@
 from pathlib import Path
+from library import *
 import pygame
-import primitives
-import filling
-import texture
 
 # pygame setup
 pygame.init()
@@ -10,22 +8,20 @@ screen = primitives.screen
 clock = pygame.time.Clock()
 running = True
 
-
-
-# CARREGA AS FOTOS: Entra na pasta 'assets\professores' e pega o arquivo
-matriz_verso, larg_verso, alt_verso = texture.load_texture(Path(__file__).parent /"assets"/"professores"/"uece.png")
-matriz_paixao, larg_paixao, alt_paixao = texture.load_texture(Path(__file__).parent /"assets"/"professores"/"matheus_paixao.png")
-matriz_guy, larg_guy, alt_guy = texture.load_texture(Path(__file__).parent /"assets"/"professores"/"guy_barroso.png")
-matriz_ana, larg_ana, alt_ana = texture.load_texture(Path(__file__).parent /"assets"/"professores"/"ana_luiza.png")
-matriz_henrique, larg_henrique, alt_henrique = texture.load_texture(Path(__file__).parent /"assets"/"professores"/"henrique.png")
-matriz_ismayle, larg_ismayle, alt_ismayle = texture.load_texture(Path(__file__).parent /"assets"/"professores"/"ismayle.png")
-matriz_marcos, larg_marcos, alt_marcos = texture.load_texture(Path(__file__).parent /"assets"/"professores"/"marcos_negreiros.png")
-matriz_matheus, larg_matheus, alt_matheus = texture.load_texture(Path(__file__).parent /"assets"/"professores"/"matheus_santos.png")
-matriz_paulo, larg_paulo, alt_paulo = texture.load_texture(Path(__file__).parent /"assets"/"professores"/"paulo_henrique_maia.png")
-matriz_pereira, larg_pereira, alt_pereira = texture.load_texture(Path(__file__).parent /"assets"/"professores"/"pereira.png")
-matriz_rafael, larg_rafael, alt_rafael = texture.load_texture(Path(__file__).parent /"assets"/"professores"/"rafael.png")
-matriz_rivas, larg_rivas, alt_rivas = texture.load_texture(Path(__file__).parent /"assets"/"professores"/"rivas.png")
-matriz_thelmo, larg_thelmo, alt_thelmo = texture.load_texture(Path(__file__).parent /"assets"/"professores"/"thelmo.png")
+# CARREGA AS FOTOS: Entra na pasta 'assets\professors' e pega o arquivo
+matriz_verso, larg_verso, alt_verso = texture.load_texture(Path(__file__).parent /"assets"/"professors"/"uece.png")
+matriz_paixao, larg_paixao, alt_paixao = texture.load_texture(Path(__file__).parent /"assets"/"professors"/"matheus_paixao.png")
+matriz_guy, larg_guy, alt_guy = texture.load_texture(Path(__file__).parent /"assets"/"professors"/"guy_barroso.png")
+matriz_ana, larg_ana, alt_ana = texture.load_texture(Path(__file__).parent /"assets"/"professors"/"ana_luiza.png")
+matriz_henrique, larg_henrique, alt_henrique = texture.load_texture(Path(__file__).parent /"assets"/"professors"/"henrique.png")
+matriz_ismayle, larg_ismayle, alt_ismayle = texture.load_texture(Path(__file__).parent /"assets"/"professors"/"ismayle.png")
+matriz_marcos, larg_marcos, alt_marcos = texture.load_texture(Path(__file__).parent /"assets"/"professors"/"marcos_negreiros.png")
+matriz_matheus, larg_matheus, alt_matheus = texture.load_texture(Path(__file__).parent /"assets"/"professors"/"matheus_santos.png")
+matriz_paulo, larg_paulo, alt_paulo = texture.load_texture(Path(__file__).parent /"assets"/"professors"/"paulo_henrique_maia.png")
+matriz_pereira, larg_pereira, alt_pereira = texture.load_texture(Path(__file__).parent /"assets"/"professors"/"pereira.png")
+matriz_rafael, larg_rafael, alt_rafael = texture.load_texture(Path(__file__).parent /"assets"/"professors"/"rafael.png")
+matriz_rivas, larg_rivas, alt_rivas = texture.load_texture(Path(__file__).parent /"assets"/"professors"/"rivas.png")
+matriz_thelmo, larg_thelmo, alt_thelmo = texture.load_texture(Path(__file__).parent /"assets"/"professors"/"thelmo.png")
 
 # Adicione o parâmetro 'surface' na função
 def desenhar_carta_com_foto(surface, x_base, y_base, largura_carta, altura_carta, matriz_foto, larg_foto, alt_foto, cor_fundo=(255, 255, 255), cor_borda=(0, 0, 0)):
@@ -63,6 +59,7 @@ def desenhar_carta_com_foto(surface, x_base, y_base, largura_carta, altura_carta
                     cor_pixel = matriz_foto[foto_x][foto_y]
                     # Passa a surface para o set_pixel
                     primitives.set_pixel(surface, x_base + i, y_base + j, cor_pixel)
+
 # CLASSE CARTA
 class Carta:
     def __init__(self, x, y, id_prof, matriz_foto, w_foto, h_foto):
@@ -85,24 +82,17 @@ class Carta:
             # Estados 1 e 2: Passa a matriz da foto do professor
             desenhar_carta_com_foto(surface, self.x, self.y, self.largura, self.altura, self.matriz_foto, self.w_foto, self.h_foto)
 
-
 # Cria uma instância da carta na posição X=150, Y=100
 carta_teste = Carta(50, 20, "prof_guy_barroso", matriz_guy, larg_guy, alt_guy)
 carta_teste2 = Carta(50, 220, "prof_guy_barroso", matriz_guy, larg_guy, alt_guy)
 
 cartas_na_mesa = [carta_teste, carta_teste2] # Se tiver 24, basta colocar todas aqui
 
-
 # 1. DESENHA A MESA INTEIRA UMA ÚNICA VEZ ANTES DO JOGO COMEÇAR!
 screen.fill((40, 100, 60))
 for carta in cartas_na_mesa:
     carta.desenhar(screen, matriz_verso, larg_verso, alt_verso)
 pygame.display.flip() # Joga o desenho pra tela
-
-
-
-
-
 
 while running:
     # poll for events
@@ -135,8 +125,6 @@ while running:
     #desenhar_carta_com_foto(370, 100, 150, 200, matriz_paixao, larg_paixao, alt_paixao)
     #desenhar_carta_com_foto(540, 100, 150, 200, matriz_guy, larg_guy, alt_guy)
 
-
-
         if event.type == pygame.MOUSEBUTTONDOWN:
             mouse_x, mouse_y = pygame.mouse.get_pos()
 
@@ -160,9 +148,6 @@ while running:
                     pygame.display.flip()
 
                     break # Para de procurar colisões
-
-
-
 
     #pygame.display.flip()
 
