@@ -1,8 +1,5 @@
 import pygame
 
-# Define a Resolução da janela principal
-screen = pygame.display.set_mode((1280, 720))
-
 def set_pixel(surface, x, y, color):
     """
     Pinta um único pixel na tela com a cor especificada.
@@ -191,6 +188,3 @@ def draw_ellipse(surface, xc, yc, rx, ry, color):
             x += 1
             px += two_ry_sq
             p2 += rx_sq - py + px
-
-
-# TODO: Implementar Algoritmo de Anti-aliasing

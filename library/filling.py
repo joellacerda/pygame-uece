@@ -6,7 +6,7 @@ def scanline_fill(surface,vertices, color):
     Utiliza uma Tabela de Arestas Global (GET - Global Edge Table) para organizar
     todas as arestas do polígono baseadas em sua coordenada Y mínima, e uma Tabela
     de Arestas Ativas (AET - Active Edge Table) para processar as interseções
-    linha por linha de varredura (scanlines).
+    linhas por linha de varredura (scanlines).
 
     Parâmetros:
     vertices: Lista de tuplas com os pontos (x, y) do polígono.
