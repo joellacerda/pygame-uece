@@ -29,11 +29,11 @@ class Card:
 
     def draw(self, surface, texture_verso):
         # Define qual textura usar baseado no estado
-        tex_atual = texture_verso if self.estado == 0 else self.texture_professor
+        tex_actual = texture_verso if self.state == 0 else self.texture_professor
 
         texture.scanline_texture(
             surface,
             self.get_vertices(),
             self.get_uvs(),
-            tex_atual
+            tex_actual
         )
