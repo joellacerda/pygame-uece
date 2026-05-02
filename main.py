@@ -164,6 +164,10 @@ def play():
         font_STATUS = pygame.font.SysFont("Courier", 16) # Fonte monoespaçada fica legal aqui
         matches_text = font_STATUS.render(f"MATCHES: {game_board.matches_found}/{game_board.total_pairs}", True, WHITE)
         screen.blit(matches_text, (220, 80))
+        time_text = font_STATUS.render(f"TIME: {pygame.time.get_ticks() // 1000}", True, WHITE) 
+        screen.blit(time_text, (1280/2 - time_text.get_width()//2, 80))
+        score_text = font_STATUS.render(f"SCORE: {game_board.matches_found * 10}", True, WHITE)
+        screen.blit(score_text, (980, 80))
 
         # 3. Renderização do Tabuleiro de Jogo (O Grid Principal)
         # Por enquanto, chamamos o draw diretamente. Futuramente, a Câmera cuidará disso.
