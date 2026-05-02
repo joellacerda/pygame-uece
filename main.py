@@ -1,9 +1,12 @@
 from pathlib import Path
+from board import Board
 from library import *
 from card import Card
 from button import Button
 import pygame
 import sys
+
+from library.camera import Camera
 
 # pygame setup
 pygame.init()
@@ -26,6 +29,13 @@ img_rafael = pygame.image.load(Path(__file__).parent /"assets"/"professors"/"raf
 img_rivas = pygame.image.load(Path(__file__).parent /"assets"/"professors"/"rivas.png").convert_alpha()
 img_thelmo = pygame.image.load(Path(__file__).parent /"assets"/"professors"/"thelmo.png").convert_alpha()
 
+professors_data = [
+    ("paixao", img_paixao), ("guy", img_guy), ("ana", img_ana),
+    ("henrique", img_henrique), ("ismayle", img_ismayle), ("negreiros", img_negreiros),
+    ("santos", img_santos), ("paulo", img_paulo), ("pereira", img_pereira),
+    ("rafael", img_rafael), ("rivas", img_rivas), ("thelmo", img_thelmo)
+]
+
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 SEA_DARK_BLUE = (13, 27, 62)
@@ -35,6 +45,32 @@ ROYAL_DARK_BLUE = (0, 31, 84)
 GRAPHITE = (51, 51, 51)
 
 SCREEN_VERTICES = [(0, 0), (1280, 0), (1280, 720), (0, 720)]
+
+game_board = Board(
+    start_x=201,
+    start_y=157,
+    card_width=146,
+    card_height=131,
+    spacing_x=6,
+    spacing_y=7,
+    professors_data=professors_data
+)
+
+MINIMAP_X = 1135
+MINIMAP_Y = 90
+MINIMAP_W = 121
+MINIMAP_H = 142
+
+minimap_viewport = [
+    MINIMAP_X,
+    MINIMAP_Y,
+    MINIMAP_X + MINIMAP_W,
+    MINIMAP_Y + MINIMAP_H
+]
+
+minimap_window = [201, 157, 201 + 909, 157 + 546]
+
+minimap_camera = Camera(window=minimap_window, viewport=minimap_viewport)
 
 def main_menu():
     pygame.display.set_caption("Menu")
@@ -86,30 +122,76 @@ def main_menu():
 def play():
     pygame.display.set_caption("MEMORY LEAKS")
 
-    card_guy = Card(208, 177, 132, 117, "guy_barroso", img_guy)
+    # Garante que o tabuleiro está limpo e embaralhado ao iniciar uma nova partida
+    game_board.flipped_cards.clear()
+    game_board.is_locked = False
+    game_board.matches_found = 0
+    # Opcional: chamar um game_board.setup_board(professors_data) aqui se quiser
+    # que o jogo sempre embaralhe ao sair e voltar do menu.
+
+    # Variáveis para o delay de cartas erradas
+    delay_start_time = 0
+    waiting_for_delay = False
 
     while True:
+        # 1. Atualizações de Lógica e Tempo (Controle de Estado)
+        current_time = pygame.time.get_ticks()
+
+        # Se as cartas viradas estiverem erradas, aguarda 1 segundo e depois as desvira
+        if waiting_for_delay:
+            if current_time - delay_start_time > 1000: # 1000 ms = 1 segundo
+                game_board.reset_mismatch()
+                waiting_for_delay = False
+
+        # 2. Renderização da Tela Base
         screen.fill(SEA_DARK_BLUE)
 
+        # -- BARRA SUPERIOR (LOGO) --
         font_LOGO = pygame.font.SysFont("Montserrat", 20)
         LOGO_VERTICES = [(0, 0), (1280, 0), (1280, 44), (0, 44)]
         filling.draw_filled_polygon(screen, LOGO_VERTICES, WHITE, WHITE)
         LOGO_TEXT = font_LOGO.render("UECE MEMORY", True, SEA_DARK_BLUE)
-        LOGO_RECT = LOGO_TEXT.get_rect(center=(640, 22))
+        # O logo fica alinhado à esquerda como no Figma
+        LOGO_RECT = LOGO_TEXT.get_rect(midleft=(20, 22))
         screen.blit(LOGO_TEXT, LOGO_RECT)
 
-        MENU_MOUSE_POS = pygame.mouse.get_pos()
+        # -- STATUS BAR (PLACAR) --
+        STATUS_RECT = [(208, 64), (1104, 64), (1104, 157), (208, 157)]
+        # No Figma a borda é amarela e o fundo é preto
+        filling.draw_filled_polygon(screen, STATUS_RECT, BLACK, MUSTARD_YELLOW)
 
-        PLAY_RECT = [(208, 64), (1104, 64), (1104, 157), (208, 157)]
-        filling.draw_filled_polygon(screen, PLAY_RECT, BLACK, WHITE)
+        # Textos da Status Bar (Exemplo estático, você pode torná-los dinâmicos depois)
+        font_STATUS = pygame.font.SysFont("Courier", 16) # Fonte monoespaçada fica legal aqui
+        matches_text = font_STATUS.render(f"MATCHES: {game_board.matches_found}/{game_board.total_pairs}", True, WHITE)
+        screen.blit(matches_text, (220, 80))
 
-        card_guy.draw(screen, img_uece)
+        # 3. Renderização do Tabuleiro de Jogo (O Grid Principal)
+        # Por enquanto, chamamos o draw diretamente. Futuramente, a Câmera cuidará disso.
+        game_board.draw(screen, img_uece)
 
+        # 4. Renderização do Minimapa (Opcional por agora, entra na parte de Viewport)
+        # MINIMAP_BORDER = [(MINIMAP_X, MINIMAP_Y), (MINIMAP_X+MINIMAP_W, MINIMAP_Y),
+        #                   (MINIMAP_X+MINIMAP_W, MINIMAP_Y+MINIMAP_H), (MINIMAP_X, MINIMAP_Y+MINIMAP_H)]
+        # filling.draw_filled_polygon(screen, MINIMAP_BORDER, GRAPHITE, MUSTARD_YELLOW)
+
+        # 5. Processamento de Eventos (Inputs)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
 
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1: # Botão esquerdo
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+
+                # Envia o clique para o tabuleiro processar
+                resultado = game_board.handle_click(mouse_x, mouse_y)
+
+                if resultado == "MISMATCH":
+                    # Inicia o cronômetro para o delay antes de desvirar
+                    waiting_for_delay = True
+                    delay_start_time = pygame.time.get_ticks()
+
+        # 6. Atualização de Tela
         pygame.display.update()
         clock.tick(60)
 
