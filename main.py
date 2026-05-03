@@ -13,7 +13,7 @@ clock = pygame.time.Clock()
 running = True
 screen = pygame.display.set_mode((1280, 720))
 
-# CARREGA AS FOTOS: Entra na pasta 'assets\professors' e pega o arquivo
+# CARREGA AS FOTOS
 img_uece = pygame.image.load(Path(__file__).parent /"assets"/"professors"/"CardVerso.png").convert_alpha()
 img_paixao = pygame.image.load(Path(__file__).parent /"assets"/"professors"/"matheus_paixao.png").convert_alpha()
 img_guy = pygame.image.load(Path(__file__).parent /"assets"/"professors"/"guy_barroso.png").convert_alpha()
@@ -47,7 +47,7 @@ SCREEN_VERTICES = [(0, 0), (1280, 0), (1280, 720), (0, 720)]
 
 game_board = Board(
     start_x=201,
-    start_y=157,
+    start_y=152, # Subiu 5 pixels
     card_width=146,
     card_height=131,
     spacing_x=6,
@@ -55,22 +55,6 @@ game_board = Board(
     professors_data=professors_data,
     texture_verso=img_uece,
 )
-
-MINIMAP_X = 1135
-MINIMAP_Y = 90
-MINIMAP_W = 121
-MINIMAP_H = 142
-
-minimap_viewport = [
-    MINIMAP_X,
-    MINIMAP_Y,
-    MINIMAP_X + MINIMAP_W,
-    MINIMAP_Y + MINIMAP_H
-]
-
-minimap_window = [201, 157, 201 + 909, 157 + 546]
-
-minimap_camera = Camera(window=minimap_window, viewport=minimap_viewport)
 
 def main_menu():
     pygame.display.set_caption("Menu")
@@ -82,7 +66,6 @@ def main_menu():
 
         MENU_MOUSE_POS = pygame.mouse.get_pos()
 
-        # MEMORY LEAK
         font_MENU = pygame.font.SysFont("Montserrat", 60)
         MENU_TEXT = font_MENU.render("MEMORY", True, MUSTARD_YELLOW)
         MENU_TEXT_2 = font_MENU.render("LEAK", True, MUSTARD_YELLOW)
@@ -91,17 +74,14 @@ def main_menu():
         screen.blit(MENU_TEXT, MENU_RECT)
         screen.blit(MENU_TEXT_2, MENU_RECT_2)
 
-        # BOTÃO INICIAR JOGO
         font_PLAY = pygame.font.SysFont("Montserrat", 20)
         PLAY_VERTICES = [(540, 410), (740, 410), (740, 460), (540, 460)]
         PLAY_BUTTON = Button(screen, PLAY_VERTICES, "INICIAR JOGO", font_PLAY, WHITE, SEA_DARK_BLUE, WHITE)
 
-        # BOTÃO SAIR
         font_QUIT = pygame.font.SysFont("Montserrat", 20)
         QUIT_VERTICES = [(540, 510), (740, 510), (740, 560), (540, 560)]
         QUIT_BUTTON = Button(screen, QUIT_VERTICES, "SAIR", font_QUIT, WHITE, SEA_DARK_BLUE, WHITE)
 
-        # Processamento de eventos
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -114,7 +94,6 @@ def main_menu():
                     pygame.quit()
                     sys.exit()
 
-        # 5. Atualiza o frame
         pygame.display.update()
         clock.tick(60)
 
@@ -123,7 +102,6 @@ logo_surface = None
 status_surface = None
 
 def render_logo_static(font_LOGO):
-    """Gera a superfície da barra de logo apenas uma vez."""
     surf = pygame.Surface((1280, 44))
     LOGO_VERTICES = [(0, 0), (1280, 0), (1280, 44), (0, 44)]
     filling.draw_filled_polygon(surf, LOGO_VERTICES, WHITE, WHITE)
@@ -133,13 +111,10 @@ def render_logo_static(font_LOGO):
     return surf
 
 def render_status_bar(font_STATUS, matches, total_pairs, elapsed_time):
-    """Gera a barra de status com timer. Chamada no início, quando um par é encontrado ou a cada segundo."""
-    surf = pygame.Surface((896, 83)) # 83
-    STATUS_RECT_LOCAL = [(0, 0), (886, 0), (886, 73), (0, 73)] # 73
-    # Linhas brancas como solicitado anteriormente
+    surf = pygame.Surface((896, 83)) # Altura diminuída em 10 pixels
+    STATUS_RECT_LOCAL = [(0, 0), (886, 0), (886, 73), (0, 73)]
     filling.draw_filled_polygon(surf, STATUS_RECT_LOCAL, BLACK, MUSTARD_YELLOW)
     
-    # Formata o tempo (MM:SS)
     total_seconds = elapsed_time // 1000
     minutes = total_seconds // 60
     seconds = total_seconds % 60
@@ -149,21 +124,58 @@ def render_status_bar(font_STATUS, matches, total_pairs, elapsed_time):
     time_text = font_STATUS.render(time_str, True, WHITE)
     
     surf.blit(matches_text, (12, 16))
-    surf.blit(time_text, (730, 16)) # Posiciona o timer à direita
+    surf.blit(time_text, (730, 16))
     return surf
+
+def victory_screen(elapsed_time):
+    """Exibe a tela final de vitória com o tempo total."""
+    pygame.display.set_caption("THANKS FOR PLAYING!")
+    
+    total_seconds = elapsed_time // 1000
+    minutes = total_seconds // 60
+    seconds = total_seconds % 60
+    time_str = f"TEMPO TOTAL: {minutes:02d}:{seconds:02d}"
+
+    font_TITLE = pygame.font.SysFont("Montserrat", 60)
+    font_TIME = pygame.font.SysFont("Montserrat", 30)
+
+    while True:
+        screen.fill(SEA_DARK_BLUE)
+        
+        # Retângulo central de vitória com linhas MUSTARD_YELLOW
+        VICTORY_RECT = [(340, 240), (940, 240), (940, 480), (340, 480)]
+        filling.draw_filled_polygon(screen, VICTORY_RECT, DARK_BLUE_GRAY, MUSTARD_YELLOW)
+
+        # Texto "Você Venceu!" e Tempo na cor MUSTARD_YELLOW
+        text_victory = font_TITLE.render("Você Venceu!", True, MUSTARD_YELLOW)
+        rect_victory = text_victory.get_rect(center=(640, 330))
+        screen.blit(text_victory, rect_victory)
+
+        text_time = font_TIME.render(time_str, True, MUSTARD_YELLOW)
+        rect_time = text_time.get_rect(center=(640, 410))
+        screen.blit(text_time, rect_time)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN or event.type == pygame.KEYDOWN:
+                main_menu()
+
+        pygame.display.update()
+        clock.tick(60)
 
 def play():
     global logo_surface, status_surface
     pygame.display.set_caption("MEMORY LEAKS")
     
-    # Fontes inicializadas fora do loop para desempenho
     font_LOGO = pygame.font.SysFont("Montserrat", 20)
     font_STATUS = pygame.font.SysFont("Courier", 16)
     
-    # 1. Setup Inicial de UI e Tempo
     start_ticks = pygame.time.get_ticks()
     elapsed_time = 0
     last_second = -1
+    last_matches_count = -1
     
     logo_surface = render_logo_static(font_LOGO)
     status_surface = render_status_bar(font_STATUS, game_board.matches_found, game_board.total_pairs, 0)
@@ -171,69 +183,54 @@ def play():
     screen.fill(SEA_DARK_BLUE)
     game_board.draw(screen, img_uece, SEA_DARK_BLUE, force=True)
 
-    # Garante que o tabuleiro está limpo e embaralhado ao iniciar uma nova partida
     game_board.flipped_cards.clear()
     game_board.is_locked = False
     game_board.matches_found = 0
-    last_matches_count = -1
 
-    # Variáveis para o delay de cartas erradas
     delay_start_time = 0
     waiting_for_delay = False
 
     while True:
-        # 1. Atualizações de Lógica e Tempo (Controle de Estado)
         current_time = pygame.time.get_ticks()
         
-        # Só conta o tempo se o jogo não tiver acabado
         if not game_board.is_game_over():
             elapsed_time = current_time - start_ticks
             
         current_second = elapsed_time // 1000
 
-        # Se as cartas viradas estiverem erradas, aguarda 1 segundo e depois as desvira
         if waiting_for_delay:
-            if current_time - delay_start_time > 1000: # 1000ms = 1 segundo
+            if current_time - delay_start_time > 1000:
                 game_board.reset_mismatch()
                 waiting_for_delay = False
 
-        # --- RENDERIZAÇÃO OTIMIZADA DA UI ---
-        # Atualiza se o segundo mudou ou se houve match
         if current_second != last_second or game_board.matches_found != last_matches_count:
             status_surface = render_status_bar(font_STATUS, game_board.matches_found, game_board.total_pairs, elapsed_time)
             last_second = current_second
             last_matches_count = game_board.matches_found
             
-        # Blit das superfícies pré-renderizadas
         screen.blit(logo_surface, (0, 0))
         screen.blit(status_surface, (208, 64))
 
-        # 3. Renderização do Tabuleiro de Jogo (O Grid Principal)
         game_board.draw(screen, img_uece, SEA_DARK_BLUE)
 
-        # 4. Renderização do Minimapa (Opcional por agora, entra na parte de Viewport)
-        # MINIMAP_BORDER = [(MINIMAP_X, MINIMAP_Y), (MINIMAP_X+MINIMAP_W, MINIMAP_Y),
-        #                   (MINIMAP_X+MINIMAP_W, MINIMAP_Y+MINIMAP_H), (MINIMAP_X, MINIMAP_Y+MINIMAP_H)]
-        # filling.draw_filled_polygon(screen, MINIMAP_BORDER, GRAPHITE, MUSTARD_YELLOW)
+        if game_board.is_game_over():
+            pygame.display.update()
+            pygame.time.delay(1000)
+            victory_screen(elapsed_time)
 
-        # 5. Processamento de Eventos (Inputs)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
 
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1: # Botão esquerdo
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
-
-                # Envia o clique para o tabuleiro processar
                 resultado = game_board.handle_click(mouse_x, mouse_y)
 
                 if resultado == "MISMATCH":
-                    # Inicia o cronômetro para o delay antes de desvirar
                     waiting_for_delay = True
                     delay_start_time = pygame.time.get_ticks()
 
-        # 6. Atualização de Tela
         pygame.display.update()
         clock.tick(60)
 
