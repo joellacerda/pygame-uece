@@ -132,14 +132,24 @@ def render_logo_static(font_LOGO):
     surf.blit(LOGO_TEXT, LOGO_RECT)
     return surf
 
-def render_status_bar(font_STATUS, matches, total_pairs):
-    """Gera a barra de status. Chamada apenas no início ou quando um par é encontrado."""
-    surf = pygame.Surface((896, 93)) # Largura: 1104-208, Altura: 157-64
-    STATUS_RECT_LOCAL = [(0, 0), (896, 0), (896, 93), (0, 93)]
+def render_status_bar(font_STATUS, matches, total_pairs, elapsed_time):
+    """Gera a barra de status com timer. Chamada no início, quando um par é encontrado ou a cada segundo."""
+    surf = pygame.Surface((896, 83)) # 83
+    STATUS_RECT_LOCAL = [(0, 0), (886, 0), (886, 73), (0, 73)] # 73
+    # Linhas brancas como solicitado anteriormente
     filling.draw_filled_polygon(surf, STATUS_RECT_LOCAL, BLACK, MUSTARD_YELLOW)
     
+    # Formata o tempo (MM:SS)
+    total_seconds = elapsed_time // 1000
+    minutes = total_seconds // 60
+    seconds = total_seconds % 60
+    time_str = f"TIME: {minutes:02d}:{seconds:02d}"
+    
     matches_text = font_STATUS.render(f"MATCHES: {matches}/{total_pairs}", True, WHITE)
-    surf.blit(matches_text, (12, 16)) # Ajuste local do texto
+    time_text = font_STATUS.render(time_str, True, WHITE)
+    
+    surf.blit(matches_text, (12, 16))
+    surf.blit(time_text, (730, 16)) # Posiciona o timer à direita
     return surf
 
 def play():
@@ -150,9 +160,13 @@ def play():
     font_LOGO = pygame.font.SysFont("Montserrat", 20)
     font_STATUS = pygame.font.SysFont("Courier", 16)
     
-    # 1. Setup Inicial de UI
+    # 1. Setup Inicial de UI e Tempo
+    start_ticks = pygame.time.get_ticks()
+    elapsed_time = 0
+    last_second = -1
+    
     logo_surface = render_logo_static(font_LOGO)
-    status_surface = render_status_bar(font_STATUS, game_board.matches_found, game_board.total_pairs)
+    status_surface = render_status_bar(font_STATUS, game_board.matches_found, game_board.total_pairs, 0)
 
     screen.fill(SEA_DARK_BLUE)
     game_board.draw(screen, img_uece, SEA_DARK_BLUE, force=True)
@@ -170,6 +184,12 @@ def play():
     while True:
         # 1. Atualizações de Lógica e Tempo (Controle de Estado)
         current_time = pygame.time.get_ticks()
+        
+        # Só conta o tempo se o jogo não tiver acabado
+        if not game_board.is_game_over():
+            elapsed_time = current_time - start_ticks
+            
+        current_second = elapsed_time // 1000
 
         # Se as cartas viradas estiverem erradas, aguarda 1 segundo e depois as desvira
         if waiting_for_delay:
@@ -178,17 +198,17 @@ def play():
                 waiting_for_delay = False
 
         # --- RENDERIZAÇÃO OTIMIZADA DA UI ---
-        # Só atualiza a superfície do placar se o número de matches mudar
-        if game_board.matches_found != last_matches_count:
-            status_surface = render_status_bar(font_STATUS, game_board.matches_found, game_board.total_pairs)
+        # Atualiza se o segundo mudou ou se houve match
+        if current_second != last_second or game_board.matches_found != last_matches_count:
+            status_surface = render_status_bar(font_STATUS, game_board.matches_found, game_board.total_pairs, elapsed_time)
+            last_second = current_second
             last_matches_count = game_board.matches_found
             
-        # Blit das superfícies pré-renderizadas (MUITO mais rápido que scanline manual todo frame)
+        # Blit das superfícies pré-renderizadas
         screen.blit(logo_surface, (0, 0))
         screen.blit(status_surface, (208, 64))
 
         # 3. Renderização do Tabuleiro de Jogo (O Grid Principal)
-        # Por enquanto, chamamos o draw diretamente. Futuramente, a Câmera cuidará disso.
         game_board.draw(screen, img_uece, SEA_DARK_BLUE)
 
         # 4. Renderização do Minimapa (Opcional por agora, entra na parte de Viewport)
