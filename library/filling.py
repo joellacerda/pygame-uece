@@ -49,7 +49,7 @@ def scanline_fill(surface,vertices, color):
             get[y_start] = []
         get[y_start].append(edge)
 
-    # Processar usando a Active Edge Table (AET)
+    # Processar usando an Active Edge Table (AET)
     aet = []
 
     for y in range(y_min, y_max + 1):
@@ -141,56 +141,55 @@ def draw_filled_polygon(surface, vertices, fill_color, stroke_color):
 def flood_fill(surface, x, y, new_color):
     """
     Algoritmo Flood Fill (Preenchimento por Inundação) otimizado por varredura de linha (Span-based).
-    Substitui uma área de cor conectada por uma nova cor. Em vez de usar recursão simples
-    (que pode causar erro de "Stack Overflow" em áreas grandes), utiliza uma pilha (stack)
-    para rastrear segmentos horizontais, expandindo para a esquerda e direita, de forma mais eficiente.
-
-    Parâmetros:
-    x, y: Coordenadas do ponto inicial (semente) do preenchimento.
-    new_color: Tupla RGB da nova cor a ser aplicada.
+    Substitui uma área de cor conectada por uma nova cor.
+    Esta versão utiliza os métodos da primitives para manter a consistência da biblioteca.
     """
+    # 1. Identifica a cor que será substituída
     target_color = primitives.read_pixel(surface, x, y)
 
-    # Se a cor alvo já é a nova cor (ou está fora da tela), não faz nada
+    # Se a cor alvo já é a nova cor ou está fora da tela, encerra
     if target_color == new_color or target_color is None:
         return
 
-    # Pilha armazena tuplas (x, y) que representam o início de um potencial segmento a verificar
     stack = [(x, y)]
     width = surface.get_width()
+    height = surface.get_height()
 
     while stack:
         curr_x, curr_y = stack.pop()
 
-        # Expandir pintando para a esquerda até encontrar uma cor diferente ou a borda
+        # --- EXPANSÃO HORIZONTAL ---
+        # Encontra o limite esquerdo do segmento da mesma cor
         l = curr_x
         while l >= 0 and primitives.read_pixel(surface, l, curr_y) == target_color:
             primitives.set_pixel(surface, l, curr_y, new_color)
             l -= 1
-
-        # Expandir pintando para a direita até encontrar uma cor diferente ou a borda
+        
+        # Encontra o limite direito do segmento da mesma cor
         r = curr_x + 1
         while r < width and primitives.read_pixel(surface, r, curr_y) == target_color:
             primitives.set_pixel(surface, r, curr_y, new_color)
             r += 1
 
-        # Neste ponto, existe um intervalo horizontal [l+1, r-1] preenchido nesta linha.
+        # Agora temos o intervalo preenchido: [l + 1, r - 1]
 
-        # Função auxiliar para verificar as linhas imediatamente acima e abaixo em busca de novos segmentos
-        def check_neighbors(y_offset):
-            span_added = False
-            for i in range(l + 1, r):
-                if primitives.read_pixel(surface, i, curr_y + y_offset) == target_color:
-                    if not span_added:
-                        stack.append((i, curr_y + y_offset))
-                        span_added = True
-                else:
-                    span_added = False
-
-        if curr_y > 0:
-            check_neighbors(-1)  # Verifica linha Acima
-        if curr_y < surface.get_height() - 1:
-            check_neighbors(1)   # Verifica linha Abaixo
+        # --- BUSCA DE NOVAS SEMENTES (SCANLINE OPTIMIZATION) ---
+        # Verifica as linhas imediatamente acima e abaixo
+        for y_offset in [-1, 1]:
+            next_y = curr_y + y_offset
+            
+            if 0 <= next_y < height:
+                span_added = False
+                
+                # Percorre o intervalo horizontal que acabamos de preencher
+                for i in range(l + 1, r):
+                    if primitives.read_pixel(surface, i, next_y) == target_color:
+                        if not span_added:
+                            # Adicionamos APENAS a primeira semente de cada segmento
+                            stack.append((i, next_y))
+                            span_added = True
+                    else:
+                        span_added = False
 
 def interpolate_color(c1, c2, t):
     """

@@ -1,5 +1,6 @@
 from pathlib import Path
 from board import Board
+from library import primitives
 from library import filling
 from button import Button
 import pygame
@@ -56,11 +57,42 @@ game_board = Board(
     texture_verso=img_uece,
 )
 
+# --- SUPERFÍCIES DE CACHE PARA UI ---
+logo_surface = None
+status_surface = None
+menu_bg_cache = None
+
+def render_menu_background():
+    """ Gera um fundo procedural usando divisões e Flood Fill """
+    surf = pygame.Surface((1280, 720))
+    surf.fill(SEA_DARK_BLUE)
+    
+    # Criamos áreas fechadas com linhas brancas finas
+    # Cruzando a tela em X
+    primitives.draw_line(surf, 0, 0, 1280, 720, (30, 45, 90))
+    primitives.draw_line(surf, 1280, 0, 0, 720, (30, 45, 90))
+    
+    # Preenchemos os triângulos resultantes com tons diferentes de azul
+    # Nota: O Flood Fill aqui mostra seu valor ao preencher áreas delimitadas por geometria
+    filling.flood_fill(surf, 640, 50, (10, 20, 50))      # Topo
+    filling.flood_fill(surf, 640, 670, (15, 30, 70))     # Base
+    filling.flood_fill(surf, 50, 360, (20, 35, 80))      # Esquerda
+    filling.flood_fill(surf, 1230, 360, (20, 35, 80))    # Direita
+    
+    return surf
+
 def main_menu():
+    global menu_bg_cache
     pygame.display.set_caption("Menu")
 
+    # Gera o fundo apenas se não estiver em cache (Desempenho)
+    if menu_bg_cache is None:
+        menu_bg_cache = render_menu_background()
+
     while True:
-        screen.fill(SEA_DARK_BLUE)
+        # Usa o fundo procedural cacheado
+        screen.blit(menu_bg_cache, (0, 0))
+        
         CENTRAL_SQUARE = [(240, 57), (1040, 57), (1040, 663), (240, 663)]
         filling.draw_filled_polygon(screen, CENTRAL_SQUARE, DARK_BLUE_GRAY, WHITE)
 
