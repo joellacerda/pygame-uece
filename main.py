@@ -53,7 +53,8 @@ game_board = Board(
     card_height=131,
     spacing_x=6,
     spacing_y=7,
-    professors_data=professors_data
+    professors_data=professors_data,
+    texture_verso=img_uece,
 )
 
 MINIMAP_X = 1135
@@ -145,7 +146,7 @@ def play():
 
         # Se as cartas viradas estiverem erradas, aguarda 1 segundo e depois as desvira
         if waiting_for_delay:
-            if current_time - delay_start_time > 1000: # 1000ms = 1 segundo
+            if current_time - delay_start_time > 900: # 1000ms = 1 segundo
                 game_board.reset_mismatch()
                 waiting_for_delay = False
 

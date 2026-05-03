@@ -1,3 +1,4 @@
+import pygame
 from library import texture
 
 class Card:
@@ -10,6 +11,34 @@ class Card:
         self.texture_professor = texture_professor
         self.state = 0  # 0 para verso, 1 para frente
         self.dirty = True  # Começa como True para o primeiro desenho
+        
+        # Superfícies para pre-renderização (Cache)
+        self.surface_front = None
+        self.surface_back = None
+
+    def pre_render(self, texture_verso):
+        """
+        Executa os algoritmos de scanline pesados apenas uma vez,
+        armazenando o resultado em superfícies do Pygame.
+        """
+        # Cria superfícies vazias com suporte a transparência (alpha)
+        self.surface_front = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+        self.surface_back = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+
+        # Como as superfícies são locais (0,0), usamos vértices relativos à superfície
+        local_vertices = [
+            (0, 0),
+            (self.width, 0),
+            (self.width, self.height),
+            (0, self.height)
+        ]
+        uvs = self.get_uvs()
+
+        # Renderiza a FRENTE (Foto do Professor) usando o algoritmo manual de scanline
+        texture.scanline_texture(self.surface_front, local_vertices, uvs, self.texture_professor)
+
+        # Renderiza o VERSO usando o algoritmo manual de scanline
+        texture.scanline_texture(self.surface_back, local_vertices, uvs, texture_verso)
 
     def get_vertices(self):
         """Retorna os 4 cantos da carta na tela baseados na posição (x, y)"""
@@ -30,12 +59,21 @@ class Card:
         ]
 
     def draw(self, surface, texture_verso):
-        # Define qual textura usar baseado no estado
-        tex_actual = texture_verso if self.state == 0 else self.texture_professor
-
-        texture.scanline_texture(
-            surface,
-            self.get_vertices(),
-            self.get_uvs(),
-            tex_actual
-        )
+        """
+        Agora o draw apenas faz o blit da superfície já renderizada.
+        Muito mais rápido que rodar o scanline todo frame.
+        """
+        target_surface = self.surface_back if self.state == 0 else self.surface_front
+        
+        if target_surface:
+            # Se já estiver pre-renderizado, usa a versão rápida
+            surface.blit(target_surface, (self.x, self.y))
+        else:
+            # Fallback caso não tenha sido pre-renderizado (mantém o valor educacional)
+            tex_actual = texture_verso if self.state == 0 else self.texture_professor
+            texture.scanline_texture(
+                surface,
+                self.get_vertices(),
+                self.get_uvs(),
+                tex_actual
+            )

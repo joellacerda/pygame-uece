@@ -8,7 +8,7 @@ class Board:
     Responsável por instanciar as cartas, organizar o grid 6x4, embaralhar,
     e validar as regras de jogo (combinação de pares e turnos).
     """
-    def __init__(self, start_x, start_y, card_width, card_height, spacing_x, spacing_y, professors_data):
+    def __init__(self, start_x, start_y, card_width, card_height, spacing_x, spacing_y, professors_data, texture_verso):
         """
         Inicializa o tabuleiro.
 
@@ -17,6 +17,7 @@ class Board:
         card_width, card_height: Dimensões individuais de cada carta.
         spacing_x, spacing_y: Espaçamento (gap) horizontal e vertical entre as cartas.
         professors_data: Lista de tuplas contendo (id_professor, textura_professor).
+        texture_verso: Imagem do verso das cartas.
         """
         self.start_x = start_x
         self.start_y = start_y
@@ -30,10 +31,9 @@ class Board:
         self.matches_found = 0        # Contador de pares encontrados
         self.total_pairs = len(professors_data)
         self.is_locked = False        # Trava o tabuleiro enquanto aguarda a animação/delay de cartas erradas
+        self.setup_board(professors_data, texture_verso)
 
-        self.setup_board(professors_data)
-
-    def setup_board(self, professors_data):
+    def setup_board(self, professors_data, texture_verso):
         """
         Duplica a lista de professores para criar os pares, embaralha e
         posiciona cada carta matematicamente no grid 6x4.
@@ -44,7 +44,7 @@ class Board:
         # Embaralha as cartas aleatoriamente
         random.shuffle(deck)
 
-        # O design pede 24 cartas. Sendo 12 pares, faremos 4 linhas e 6 colunas.
+        # O design pede 24 cartas. Usando 12 pares, faremos 4 linhas e 6 colunas.
         columns = 6
 
         for index, (prof_id, prof_texture) in enumerate(deck):
@@ -58,6 +58,10 @@ class Board:
 
             # Instancia a carta e adiciona à lista do tabuleiro[cite: 18]
             new_card = Card(x_pos, y_pos, self.card_width, self.card_height, prof_id, prof_texture)
+
+            # Pre-renderiza a carta imediatamente após a criação
+            new_card.pre_render(texture_verso)
+
             self.cards.append(new_card)
 
     def handle_click(self, mouse_x, mouse_y):
