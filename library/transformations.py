@@ -1,133 +1,91 @@
 import math
+import numpy as np
 
 def identity():
-	"""
-    Retorna a matriz identidade 3x3.
-    Na multiplicação de matrizes, a identidade funciona como o número 1:
-    não altera a matriz original. Serve como base neutra.
     """
-	return[
-	[1,0,0],
-	[0,1,0],
-	[0,0,1]
-	]
+    Retorna a matriz identidade 3x3 como um array NumPy.
+    """
+    return np.identity(3)
 
 def translation(tx, ty):
-	"""
-    Cria uma matriz de translação 2D usando coordenadas homogêneas.
-
-    Parâmetros:
-    tx: deslocamento no eixo X (positivo vai para direita, negativo para esquerda).
-    ty: deslocamento no eixo Y (positivo vai para baixo/cima dependendo do sistema do Pygame).
     """
-	return [
-	[1,0,tx],
-	[0,1,ty],
-	[0,0,1]
-	]
+    Cria uma matriz de translação 2D em coordenadas homogêneas.
+    """
+    return np.array([
+        [1, 0, tx],
+        [0, 1, ty],
+        [0, 0, 1]
+    ])
 
 def scale(sx, sy):
-	"""
-    Cria uma matriz de escala 2D usando coordenadas homogêneas.
-
-    Parâmetros:
-    sx: multiplicador de tamanho no eixo X (ex: 2.0 dobra a largura, 0.5 divide pela metade).
-    sy: multiplicador de tamanho no eixo Y.
     """
-	return [
-	[sx,0,0],
-	[0,sy,0],
-	[0,0,1]
-	]
+    Cria uma matriz de escala 2D em coordenadas homogêneas.
+    """
+    return np.array([
+        [sx, 0, 0],
+        [0, sy, 0],
+        [0, 0, 1]
+    ])
 
 def rotation(theta):
-	"""
-    Cria uma matriz de rotação 2D usando coordenadas homogêneas.
-
-    Parâmetros:
-    theta: ângulo de rotação em radianos.
-           (Dica: se tiver o ângulo em graus, use math.radians(graus) antes de passar para cá).
     """
-	c = math.cos(theta)
-	s = math.sin(theta)
-
-	return [
-	[c,-s,0],
-	[s,c,0],
-	[0,0,1]
-	]
+    Cria uma matriz de rotação 2D em coordenadas homogêneas.
+    """
+    c = math.cos(theta)
+    s = math.sin(theta)
+    return np.array([
+        [c, -s, 0],
+        [s,  c, 0],
+        [0,  0, 1]
+    ])
 
 def create_transformation():
-	"""
-    Inicializa uma nova matriz de transformação cumulativa.
-    Começa como a matriz identidade para que outras transformações (translação,
-    rotação, escala) possam ser multiplicadas em sequência formando uma animação.
-    """
-	return identity()
+    return identity()
 
 def multiply_matrices(m1, m2):
     """
-    Multiplica duas matrizes 3x3.
-    Útil para combinar transformações (ex: transladar e depois rotacionar)
-    antes de aplicá-las aos vértices, economizando processamento.
+    Multiplica duas matrizes usando a otimização do NumPy (@).
     """
-    result = [
-        [0, 0, 0],
-        [0, 0, 0],
-        [0, 0, 0]
-    ]
-    for i in range(3):
-        for j in range(3):
-            for k in range(3):
-                result[i][j] += m1[i][k] * m2[k][j]
-    return result
+    return m1 @ m2
 
 def apply_transformation(matrix, vertices):
     """
-    Aplica uma matriz de transformação 3x3 a uma lista de vértices 2D (x, y).
-    Retorna uma nova lista com os vértices transformados (convertidos para int).
+    Aplica a matriz de transformação a todos os vértices de uma vez (Vetorização).
     """
-    new_vertices = []
-
-    for x, y in vertices:
-        # Multiplicando a matriz de transformação pelo vetor coluna [x, y, 1]
-        novo_x = matrix[0][0] * x + matrix[0][1] * y + matrix[0][2] * 1
-        novo_y = matrix[1][0] * x + matrix[1][1] * y + matrix[1][2] * 1
-
-        # O cálculo da terceira linha (W) é omitido pois em transformações afins padrão ele continua 1.
-
-        # O Pygame e seu "set_pixel" precisam de coordenadas inteiras, então arredondamos
-        new_vertices.append((int(round(novo_x)), int(round(novo_y))))
-
-    return new_vertices
+    if not vertices:
+        return []
+    
+    # 1. Converte lista de (x, y) para matriz NumPy (N, 2)
+    v_array = np.array(vertices)
+    
+    # 2. Adiciona coluna de 1s para coordenadas homogêneas → (N, 3)
+    # Ex: [[x1, y1, 1], [x2, y2, 1], ...]
+    ones = np.ones((v_array.shape[0], 1))
+    v_homogeneous = np.hstack([v_array, ones])
+    
+    # 3. Multiplica todos os pontos pela matriz de uma vez
+    # v_transformed = V * M^T (ou M * V^T)
+    # Usamos '.T' na matriz para alinhar as dimensões (N,3) @ (3,3)
+    result = v_homogeneous @ matrix.T
+    
+    # 4. Retorna apenas as colunas X e Y, convertendo para int
+    return [(int(round(x)), int(round(y))) for x, y in result[:, :2]]
 
 def window_to_viewport(window, viewport):
     """
-    Gera a matriz de transformação de Janela (Coordenadas de Mundo)
-    para Viewport (Coordenadas de Tela/Dispositivo).
-
-    Parâmetros:
-    window: tupla (Wxmin, Wymin, Wxmax, Wymax)
-    viewport: tupla (Vxmin, Vymin, Vxmax, Vymax)
+    Gera a matriz de transformação de Janela para Viewport usando NumPy.
     """
     Wxmin, Wymin, Wxmax, Wymax = window
     Vxmin, Vymin, Vxmax, Vymax = viewport
 
-    # Calcula a escala entre a Viewport e a Janela
     sx = (Vxmax - Vxmin) / (Wxmax - Wxmin)
-    # A inversão do Y abaixo garante que o sistema cartesiano tradicional
-    # seja adaptado para o sistema do Pygame (onde o Y cresce para baixo)
     sy = (Vymin - Vymax) / (Wymax - Wymin)
 
-    m = identity()
-
-    # 1. Translada a janela para a origem
-    m = multiply_matrices(translation(-Wxmin, -Wymin), m)
-
-    # 2. Aplica a escala para caber na Viewport
-    m = multiply_matrices(scale(sx, sy), m)
-
-    # 3. Translada para a posição correta da Viewport na tela
-    m = multiply_matrices(translation(Vxmin, Vymax), m)
-
-    return m
+    # Combinando as transformações: Translada -> Escala -> Translada
+    # Lembrete: A ordem de aplicação é da direita para a esquerda na multiplicação
+    m_trans1 = translation(-Wxmin, -Wymin)
+    m_scale  = scale(sx, sy)
+    m_trans2 = translation(Vxmin, Vymax)
+    
+    # Matriz final = T2 * S * T1
+    return m_trans2 @ m_scale @ m_trans1
