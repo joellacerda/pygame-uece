@@ -44,18 +44,32 @@ def scanline_texture(surface, points, uvs, texture):
             x_start, u_start, v_start = inter[i]
             x_end,   u_end,   v_end   = inter[i + 1]
 
-            if x_start == x_end:
+            width = x_end - x_start
+            if width <= 0:
                 continue
 
-            for x in range(int(x_start), int(x_end) + 1):
-                t = (x - x_start) / (x_end - x_start)
+            # --- OTIMIZAÇÃO: DIFERENÇAS INCREMENTAIS ---
+            # Em vez de calcular 't' por divisão para cada píxel, calculamos
+            # o quanto U e V mudam para cada 1 píxel de avanço em X (o "passo").
+            du = (u_end - u_start) / width
+            dv = (v_end - v_start) / width
 
-                u = u_start + t * (u_end - u_start)
-                v = v_start + t * (v_end - v_start)
+            # Ajuste de sub-píxel: garante que a textura comece no lugar certo
+            # mesmo que x_start não seja um número inteiro.
+            x_int_start = int(x_start)
+            offset = x_int_start - x_start
+            curr_u = u_start + (offset * du)
+            curr_v = v_start + (offset * dv)
 
-                tx = int(u * (tex_w - 1))
-                ty = int(v * (tex_h - 1))
+            for x in range(x_int_start, int(x_end) + 1):
+                # Agora usamos apenas curr_u e curr_v atualizados por ADIÇÃO
+                tx = int(curr_u * (tex_w - 1))
+                ty = int(curr_v * (tex_h - 1))
 
                 if 0 <= tx < tex_w and 0 <= ty < tex_h:
                     color = texture.get_at((tx, ty))
                     primitives.set_pixel(surface, x, y, color)
+                
+                # Avança U e V para o próximo píxel de X
+                curr_u += du
+                curr_v += dv
