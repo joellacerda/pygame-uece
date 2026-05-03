@@ -1,7 +1,6 @@
 from pathlib import Path
 from board import Board
-from library import *
-from card import Card
+from library import filling
 from button import Button
 import pygame
 import sys
@@ -77,7 +76,6 @@ def main_menu():
     pygame.display.set_caption("Menu")
 
     while True:
-
         screen.fill(SEA_DARK_BLUE)
         CENTRAL_SQUARE = [(240, 57), (1040, 57), (1040, 663), (240, 663)]
         filling.draw_filled_polygon(screen, CENTRAL_SQUARE, DARK_BLUE_GRAY, WHITE)
@@ -120,8 +118,42 @@ def main_menu():
         pygame.display.update()
         clock.tick(60)
 
+# --- SUPERFÍCIES DE CACHE PARA UI ---
+logo_surface = None
+status_surface = None
+
+def render_logo_static(font_LOGO):
+    """Gera a superfície da barra de logo apenas uma vez."""
+    surf = pygame.Surface((1280, 44))
+    LOGO_VERTICES = [(0, 0), (1280, 0), (1280, 44), (0, 44)]
+    filling.draw_filled_polygon(surf, LOGO_VERTICES, WHITE, WHITE)
+    LOGO_TEXT = font_LOGO.render("UECE MEMORY", True, SEA_DARK_BLUE)
+    LOGO_RECT = LOGO_TEXT.get_rect(midleft=(20, 22))
+    surf.blit(LOGO_TEXT, LOGO_RECT)
+    return surf
+
+def render_status_bar(font_STATUS, matches, total_pairs):
+    """Gera a barra de status. Chamada apenas no início ou quando um par é encontrado."""
+    surf = pygame.Surface((896, 93)) # Largura: 1104-208, Altura: 157-64
+    STATUS_RECT_LOCAL = [(0, 0), (896, 0), (896, 93), (0, 93)]
+    filling.draw_filled_polygon(surf, STATUS_RECT_LOCAL, BLACK, MUSTARD_YELLOW)
+    
+    matches_text = font_STATUS.render(f"MATCHES: {matches}/{total_pairs}", True, WHITE)
+    surf.blit(matches_text, (12, 16)) # Ajuste local do texto
+    return surf
+
 def play():
+    global logo_surface, status_surface
     pygame.display.set_caption("MEMORY LEAKS")
+    
+    # Fontes inicializadas fora do loop para desempenho
+    font_LOGO = pygame.font.SysFont("Montserrat", 20)
+    font_STATUS = pygame.font.SysFont("Courier", 16)
+    
+    # 1. Setup Inicial de UI
+    logo_surface = render_logo_static(font_LOGO)
+    status_surface = render_status_bar(font_STATUS, game_board.matches_found, game_board.total_pairs)
+
     screen.fill(SEA_DARK_BLUE)
     game_board.draw(screen, img_uece, SEA_DARK_BLUE, force=True)
 
@@ -129,16 +161,11 @@ def play():
     game_board.flipped_cards.clear()
     game_board.is_locked = False
     game_board.matches_found = 0
-    # Opcional: chamar um game_board.setup_board(professors_data) aqui se quiser
-    # que o jogo sempre embaralhe ao sair e voltar do menu.
+    last_matches_count = -1
 
     # Variáveis para o delay de cartas erradas
     delay_start_time = 0
     waiting_for_delay = False
-
-    # Fontes inicializadas fora do loop para desempenho
-    font_LOGO = pygame.font.SysFont("Montserrat", 20)
-    font_STATUS = pygame.font.SysFont("Courier", 16)
 
     while True:
         # 1. Atualizações de Lógica e Tempo (Controle de Estado)
@@ -146,29 +173,19 @@ def play():
 
         # Se as cartas viradas estiverem erradas, aguarda 1 segundo e depois as desvira
         if waiting_for_delay:
-            if current_time - delay_start_time > 900: # 1000ms = 1 segundo
+            if current_time - delay_start_time > 1000: # 1000ms = 1 segundo
                 game_board.reset_mismatch()
                 waiting_for_delay = False
 
-        # 2. Renderização da Tela Base
-        # screen.fill(SEA_DARK_BLUE)
-
-        # -- BARRA SUPERIOR (LOGO) --
-        LOGO_VERTICES = [(0, 0), (1280, 0), (1280, 44), (0, 44)]
-        filling.draw_filled_polygon(screen, LOGO_VERTICES, WHITE, WHITE)
-        LOGO_TEXT = font_LOGO.render("UECE MEMORY", True, SEA_DARK_BLUE)
-        # O logo fica alinhado à esquerda como no Figma
-        LOGO_RECT = LOGO_TEXT.get_rect(midleft=(20, 22))
-        screen.blit(LOGO_TEXT, LOGO_RECT)
-
-        # -- STATUS BAR (PLACAR) --
-        STATUS_RECT = [(208, 64), (1104, 64), (1104, 157), (208, 157)]
-        # No Figma a borda é amarela e o fundo é preto
-        filling.draw_filled_polygon(screen, STATUS_RECT, BLACK, MUSTARD_YELLOW)
-
-        # Textos da Status Bar
-        matches_text = font_STATUS.render( f"MATCHES: {game_board.matches_found}/{game_board.total_pairs}", True, WHITE)
-        screen.blit(matches_text, (220, 80))
+        # --- RENDERIZAÇÃO OTIMIZADA DA UI ---
+        # Só atualiza a superfície do placar se o número de matches mudar
+        if game_board.matches_found != last_matches_count:
+            status_surface = render_status_bar(font_STATUS, game_board.matches_found, game_board.total_pairs)
+            last_matches_count = game_board.matches_found
+            
+        # Blit das superfícies pré-renderizadas (MUITO mais rápido que scanline manual todo frame)
+        screen.blit(logo_surface, (0, 0))
+        screen.blit(status_surface, (208, 64))
 
         # 3. Renderização do Tabuleiro de Jogo (O Grid Principal)
         # Por enquanto, chamamos o draw diretamente. Futuramente, a Câmera cuidará disso.
