@@ -1,4 +1,5 @@
 from library import texture
+
 class Card:
     def __init__(self, x, y, width, height, id_professor, texture_professor):
         self.x = x
@@ -8,6 +9,7 @@ class Card:
         self.id = id_professor
         self.texture_professor = texture_professor
         self.state = 0  # 0 para verso, 1 para frente
+        self.dirty = True  # Começa como True para o primeiro desenho
 
     def get_vertices(self):
         """Retorna os 4 cantos da carta na tela baseados na posição (x, y)"""
@@ -19,7 +21,7 @@ class Card:
         ]
 
     def get_uvs(self):
-        """Retorna o mapeamento da textura (0.0 a 1.0) para os 4 cantos"""
+        """Retorna o mapeamento da textura (0,0 a 1,0) para os 4 cantos"""
         return [
             (0, 0),  # Canto superior esquerdo da imagem
             (1, 0),  # Canto superior direito

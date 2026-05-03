@@ -1,5 +1,6 @@
 import random
 from card import Card
+import pygame
 
 class Board:
     """
@@ -73,14 +74,14 @@ class Board:
 
         for card in self.cards:
             # Verifica colisão simples via Bounding Box (AABB)
-            if card.x <= mouse_x <= card.x + card.width and card.y <= mouse_y <= card.y + card.height:
-
+            if (card.x <= mouse_x <= card.x + card.width and card.y <= mouse_y <= card.y + card.height):
                 # Ignora se a carta já estiver virada (state 1) ou já tiver sido encontrada
                 if card.state == 1:
                     return "IGNORED"
 
                 # Vira a carta
                 card.state = 1
+                card.dirty = True  # Marcar para redesenho
                 self.flipped_cards.append(card)
 
                 # Verifica se duas cartas foram viradas neste turno
@@ -114,7 +115,7 @@ class Board:
         """
         for card in self.flipped_cards:
             card.state = 0
-
+            card.dirty = True  # Marcar para redesenho
         self.flipped_cards.clear()
         self.is_locked = False
 
@@ -122,10 +123,14 @@ class Board:
         """Verifica se todos os pares foram encontrados."""
         return self.matches_found == self.total_pairs
 
-    def draw(self, surface, texture_verso):
+    def draw(self, surface, texture_verso, bg_color, force=False):
         """
         Delega a responsabilidade de renderização para as cartas[cite: 18].
         Futuramente, a câmera passará por aqui.
         """
         for card in self.cards:
-            card.draw(surface, texture_verso)
+            if card.dirty or force:
+                # Limpa a área da carta antes de desenhar (Dirty Rectangle)
+                pygame.draw.rect(surface, bg_color, (card.x, card.y, card.width, card.height))
+                card.draw(surface, texture_verso)
+                card.dirty = False  # Carta agora está limpa

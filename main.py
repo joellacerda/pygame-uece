@@ -121,6 +121,8 @@ def main_menu():
 
 def play():
     pygame.display.set_caption("MEMORY LEAKS")
+    screen.fill(SEA_DARK_BLUE)
+    game_board.draw(screen, img_uece, SEA_DARK_BLUE, force=True)
 
     # Garante que o tabuleiro está limpo e embaralhado ao iniciar uma nova partida
     game_board.flipped_cards.clear()
@@ -133,21 +135,24 @@ def play():
     delay_start_time = 0
     waiting_for_delay = False
 
+    # Fontes inicializadas fora do loop para desempenho
+    font_LOGO = pygame.font.SysFont("Montserrat", 20)
+    font_STATUS = pygame.font.SysFont("Courier", 16)
+
     while True:
         # 1. Atualizações de Lógica e Tempo (Controle de Estado)
         current_time = pygame.time.get_ticks()
 
         # Se as cartas viradas estiverem erradas, aguarda 1 segundo e depois as desvira
         if waiting_for_delay:
-            if current_time - delay_start_time > 1000: # 1000 ms = 1 segundo
+            if current_time - delay_start_time > 1000: # 1000ms = 1 segundo
                 game_board.reset_mismatch()
                 waiting_for_delay = False
 
         # 2. Renderização da Tela Base
-        screen.fill(SEA_DARK_BLUE)
+        # screen.fill(SEA_DARK_BLUE)
 
         # -- BARRA SUPERIOR (LOGO) --
-        font_LOGO = pygame.font.SysFont("Montserrat", 20)
         LOGO_VERTICES = [(0, 0), (1280, 0), (1280, 44), (0, 44)]
         filling.draw_filled_polygon(screen, LOGO_VERTICES, WHITE, WHITE)
         LOGO_TEXT = font_LOGO.render("UECE MEMORY", True, SEA_DARK_BLUE)
@@ -160,14 +165,13 @@ def play():
         # No Figma a borda é amarela e o fundo é preto
         filling.draw_filled_polygon(screen, STATUS_RECT, BLACK, MUSTARD_YELLOW)
 
-        # Textos da Status Bar (Exemplo estático, você pode torná-los dinâmicos depois)
-        font_STATUS = pygame.font.SysFont("Courier", 16) # Fonte monoespaçada fica legal aqui
-        matches_text = font_STATUS.render(f"MATCHES: {game_board.matches_found}/{game_board.total_pairs}", True, WHITE)
+        # Textos da Status Bar
+        matches_text = font_STATUS.render( f"MATCHES: {game_board.matches_found}/{game_board.total_pairs}", True, WHITE)
         screen.blit(matches_text, (220, 80))
 
         # 3. Renderização do Tabuleiro de Jogo (O Grid Principal)
         # Por enquanto, chamamos o draw diretamente. Futuramente, a Câmera cuidará disso.
-        game_board.draw(screen, img_uece)
+        game_board.draw(screen, img_uece, SEA_DARK_BLUE)
 
         # 4. Renderização do Minimapa (Opcional por agora, entra na parte de Viewport)
         # MINIMAP_BORDER = [(MINIMAP_X, MINIMAP_Y), (MINIMAP_X+MINIMAP_W, MINIMAP_Y),
