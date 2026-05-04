@@ -1,7 +1,10 @@
 from . import primitives
-import pygame
 
-def scanline_texture(surface, points, uvs, texture):
+def scanline_texture(surface, points, uvs, texture, transparent_color=None):
+    """
+    Renderiza um polígono texturizado usando o algoritmo Scanline.
+    Inclui otimização incremental (DDA) para cálculo de U/V e suporte a Color Keying.
+    """
     tex_w, tex_h = texture.get_width(), texture.get_height()
     n = len(points)
     ys = [p[1] for p in points]
@@ -35,7 +38,7 @@ def scanline_texture(surface, points, uvs, texture):
 
             inter.append((x, u, v))
 
-        inter.sort(key=lambda i: i[0])
+        inter.sort(key=lambda item: item[0])
 
         for i in range(0, len(inter), 2):
             if i + 1 >= len(inter):
@@ -49,27 +52,30 @@ def scanline_texture(surface, points, uvs, texture):
                 continue
 
             # --- OTIMIZAÇÃO: DIFERENÇAS INCREMENTAIS ---
-            # Em vez de calcular 't' por divisão para cada píxel, calculamos
-            # o quanto U e V mudam para cada 1 píxel de avanço em X (o "passo").
             du = (u_end - u_start) / width
             dv = (v_end - v_start) / width
 
-            # Ajuste de sub-píxel: garante que a textura comece no lugar certo
-            # mesmo que x_start não seja um número inteiro.
+            # Ajuste de sub-píxel
             x_int_start = int(x_start)
             offset = x_int_start - x_start
             curr_u = u_start + (offset * du)
             curr_v = v_start + (offset * dv)
 
             for x in range(x_int_start, int(x_end) + 1):
-                # Agora usamos apenas curr_u e curr_v atualizados por ADIÇÃO
                 tx = int(curr_u * (tex_w - 1))
                 ty = int(curr_v * (tex_h - 1))
 
                 if 0 <= tx < tex_w and 0 <= ty < tex_h:
                     color = texture.get_at((tx, ty))
-                    primitives.set_pixel(surface, x, y, color)
-                
-                # Avança U e V para o próximo píxel de X
+
+                    if transparent_color is not None:
+                        tr, tg, tb = transparent_color
+                        r, g, b = color[0], color[1], color[2]
+                        if abs(r - tr) > 15 or abs(g - tg) > 15 or abs(b - tb) > 15:
+                            primitives.set_pixel(surface, x, y, color)
+                    else:
+                        primitives.set_pixel(surface, x, y, color)
+
+                # Avança U e V para o próximo píxel de X por adição
                 curr_u += du
                 curr_v += dv

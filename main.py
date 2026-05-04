@@ -6,8 +6,6 @@ from button import Button
 import pygame
 import sys
 
-from library.camera import Camera
-
 # pygame setup
 pygame.init()
 clock = pygame.time.Clock()
@@ -15,7 +13,7 @@ running = True
 screen = pygame.display.set_mode((1280, 720))
 
 # CARREGA AS FOTOS
-img_uece = pygame.image.load(Path(__file__).parent /"assets"/"professors"/"CardVerso.png").convert_alpha()
+img_uece = pygame.image.load(Path(__file__).parent /"assets"/"professors"/"logo_uece.png").convert_alpha()
 img_paixao = pygame.image.load(Path(__file__).parent /"assets"/"professors"/"matheus_paixao.png").convert_alpha()
 img_guy = pygame.image.load(Path(__file__).parent /"assets"/"professors"/"guy_barroso.png").convert_alpha()
 img_ana = pygame.image.load(Path(__file__).parent /"assets"/"professors"/"ana_luiza.png").convert_alpha()
@@ -32,7 +30,7 @@ img_thelmo = pygame.image.load(Path(__file__).parent /"assets"/"professors"/"the
 professors_data = [
     ("paixao", img_paixao), ("guy", img_guy), ("ana", img_ana),
     ("henrique", img_henrique), ("ismayle", img_ismayle), ("negreiros", img_negreiros),
-    ("santos", img_santos), ("paulo", img_paulo), ("pereira", img_pereira),
+    ("santos", img_santos), ("ph", img_paulo), ("pereira", img_pereira),
     ("rafael", img_rafael), ("rivas", img_rivas), ("thelmo", img_thelmo)
 ]
 
@@ -66,19 +64,19 @@ def render_menu_background():
     """ Gera um fundo procedural usando divisões e Flood Fill """
     surf = pygame.Surface((1280, 720))
     surf.fill(SEA_DARK_BLUE)
-    
+
     # Criamos áreas fechadas com linhas brancas finas
     # Cruzando a tela em X
     primitives.draw_line(surf, 0, 0, 1280, 720, (30, 45, 90))
     primitives.draw_line(surf, 1280, 0, 0, 720, (30, 45, 90))
-    
+
     # Preenchemos os triângulos resultantes com tons diferentes de azul
     # Nota: O Flood Fill aqui mostra seu valor ao preencher áreas delimitadas por geometria
     filling.flood_fill(surf, 640, 50, (10, 20, 50))      # Topo
     filling.flood_fill(surf, 640, 670, (15, 30, 70))     # Base
     filling.flood_fill(surf, 50, 360, (20, 35, 80))      # Esquerda
     filling.flood_fill(surf, 1230, 360, (20, 35, 80))    # Direita
-    
+
     return surf
 
 def main_menu():
@@ -92,7 +90,7 @@ def main_menu():
     while True:
         # Usa o fundo procedural cacheado
         screen.blit(menu_bg_cache, (0, 0))
-        
+
         CENTRAL_SQUARE = [(240, 57), (1040, 57), (1040, 663), (240, 663)]
         filling.draw_filled_polygon(screen, CENTRAL_SQUARE, DARK_BLUE_GRAY, WHITE)
 
@@ -146,15 +144,15 @@ def render_status_bar(font_STATUS, matches, total_pairs, elapsed_time):
     surf = pygame.Surface((896, 83)) # Altura diminuída em 10 pixels
     STATUS_RECT_LOCAL = [(0, 0), (886, 0), (886, 73), (0, 73)]
     filling.draw_filled_polygon(surf, STATUS_RECT_LOCAL, BLACK, MUSTARD_YELLOW)
-    
+
     total_seconds = elapsed_time // 1000
     minutes = total_seconds // 60
     seconds = total_seconds % 60
     time_str = f"TIME: {minutes:02d}:{seconds:02d}"
-    
+
     matches_text = font_STATUS.render(f"MATCHES: {matches}/{total_pairs}", True, WHITE)
     time_text = font_STATUS.render(time_str, True, WHITE)
-    
+
     surf.blit(matches_text, (12, 16))
     surf.blit(time_text, (730, 16))
     return surf
@@ -162,7 +160,7 @@ def render_status_bar(font_STATUS, matches, total_pairs, elapsed_time):
 def victory_screen(elapsed_time):
     """Exibe a tela final de vitória com o tempo total."""
     pygame.display.set_caption("THANKS FOR PLAYING!")
-    
+
     total_seconds = elapsed_time // 1000
     minutes = total_seconds // 60
     seconds = total_seconds % 60
@@ -173,7 +171,7 @@ def victory_screen(elapsed_time):
 
     while True:
         screen.fill(SEA_DARK_BLUE)
-        
+
         # Retângulo central de vitória com linhas MUSTARD_YELLOW
         VICTORY_RECT = [(340, 240), (940, 240), (940, 480), (340, 480)]
         filling.draw_filled_polygon(screen, VICTORY_RECT, DARK_BLUE_GRAY, MUSTARD_YELLOW)
@@ -199,16 +197,16 @@ def victory_screen(elapsed_time):
 
 def play():
     global logo_surface, status_surface
-    pygame.display.set_caption("MEMORY LEAKS")
-    
+    pygame.display.set_caption("MEMORY LEAK")
+
     font_LOGO = pygame.font.SysFont("Montserrat", 20)
     font_STATUS = pygame.font.SysFont("Courier", 16)
-    
+
     start_ticks = pygame.time.get_ticks()
     elapsed_time = 0
     last_second = -1
     last_matches_count = -1
-    
+
     logo_surface = render_logo_static(font_LOGO)
     status_surface = render_status_bar(font_STATUS, game_board.matches_found, game_board.total_pairs, 0)
 
@@ -227,10 +225,10 @@ def play():
 
         # CHAMA O MOTOR DE ANIMAÇÃO AQUI
         game_board.update()
-        
+
         if not game_board.is_game_over():
             elapsed_time = current_time - start_ticks
-            
+
         current_second = elapsed_time // 1000
 
         if waiting_for_delay:
@@ -242,7 +240,7 @@ def play():
             status_surface = render_status_bar(font_STATUS, game_board.matches_found, game_board.total_pairs, elapsed_time)
             last_second = current_second
             last_matches_count = game_board.matches_found
-            
+
         screen.blit(logo_surface, (0, 0))
         screen.blit(status_surface, (208, 64))
 
