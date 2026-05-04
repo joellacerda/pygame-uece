@@ -224,6 +224,9 @@ def play():
 
     while True:
         current_time = pygame.time.get_ticks()
+
+        # CHAMA O MOTOR DE ANIMAÇÃO AQUI
+        game_board.update()
         
         if not game_board.is_game_over():
             elapsed_time = current_time - start_ticks

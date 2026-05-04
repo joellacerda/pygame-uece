@@ -56,13 +56,22 @@ class Board:
             x_pos = self.start_x + (col * (self.card_width + self.spacing_x))
             y_pos = self.start_y + (row * (self.card_height + self.spacing_y))
 
-            # Instancia a carta e adiciona à lista do tabuleiro[cite: 18]
+            # Instancia a carta e adiciona à lista do tabuleiro
             new_card = Card(x_pos, y_pos, self.card_width, self.card_height, prof_id, prof_texture)
 
             # Pre-renderiza a carta imediatamente após a criação
             new_card.pre_render(texture_verso)
 
             self.cards.append(new_card)
+
+    def update(self):
+        """
+        NOVO MÉTODO:
+        Repassa o "sinal de tempo" para todas as cartas do tabuleiro.
+        Isso faz o motor de animação 2D de cada carta calcular os quadros da rotação.
+        """
+        for card in self.cards:
+            card.update()
 
     def handle_click(self, mouse_x, mouse_y):
         """
@@ -79,13 +88,13 @@ class Board:
         for card in self.cards:
             # Verifica colisão simples via Bounding Box (AABB)
             if (card.x <= mouse_x <= card.x + card.width and card.y <= mouse_y <= card.y + card.height):
-                # Ignora se a carta já estiver virada (state 1) ou já tiver sido encontrada
-                if card.state == 1:
+                
+                # Ignora se a carta já estiver virada (state 1), já tiver sido encontrada, ou estiver no meio de uma animação
+                if card.state == 1 or card.is_animating:
                     return "IGNORED"
 
-                # Vira a carta
-                card.state = 1
-                card.dirty = True  # Marcar para redesenho
+                # Inicia a animação de virar a carta 
+                card.start_flip()
                 self.flipped_cards.append(card)
 
                 # Verifica se duas cartas foram viradas neste turno
@@ -118,8 +127,9 @@ class Board:
         Deve ser chamado pelo main.py após um pequeno delay (ex: 1 segundo).
         """
         for card in self.flipped_cards:
-            card.state = 0
-            card.dirty = True  # Marcar para redesenho
+            # Aciona a animação 3D para as cartas voltarem a ficar escondidas
+            card.start_flip()  
+            
         self.flipped_cards.clear()
         self.is_locked = False
 
@@ -129,7 +139,7 @@ class Board:
 
     def draw(self, surface, texture_verso, bg_color, force=False):
         """
-        Delega a responsabilidade de renderização para as cartas[cite: 18].
+        Delega a responsabilidade de renderização para as cartas.
         Futuramente, a câmera passará por aqui.
         """
         for card in self.cards:
