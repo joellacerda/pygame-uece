@@ -22,6 +22,18 @@ class Card:
         self.is_animating = False
         self.shrinking = False
 
+    
+    def get_vertices(self):
+        """Retorna os 4 cantos da carta no mundo 2D baseados na posição absoluta"""
+        return [
+            (self.x, self.y),
+            (self.x + self.width, self.y),
+            (self.x + self.width, self.y + self.height),
+            (self.x, self.y + self.height)
+        ]
+   
+   
+   
     def get_uvs(self):
         return [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)]
 

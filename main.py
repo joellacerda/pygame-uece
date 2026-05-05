@@ -5,6 +5,7 @@ from library import filling
 from button import Button
 import pygame
 import sys
+from minimap import Minimap
 
 # pygame setup
 pygame.init()
@@ -220,6 +221,10 @@ def play():
     delay_start_time = 0
     waiting_for_delay = False
 
+    # Movendo para a esquerda (X=20) e diminuindo o tamanho (Largura=150, Altura=100)
+    radar = Minimap(20, 64, 150, 100)
+
+
     while True:
         current_time = pygame.time.get_ticks()
 
@@ -245,6 +250,9 @@ def play():
         screen.blit(status_surface, (208, 64))
 
         game_board.draw(screen, img_uece, SEA_DARK_BLUE)
+
+        # Desenha o radar no canto da tela (Janela -> Viewport)
+        radar.draw(screen, game_board)
 
         if game_board.is_game_over():
             pygame.display.update()

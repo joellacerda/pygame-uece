@@ -78,14 +78,25 @@ def window_to_viewport(window, viewport):
     Wxmin, Wymin, Wxmax, Wymax = window
     Vxmin, Vymin, Vxmax, Vymax = viewport
 
+    
+    # sx = (Vxmax - Vxmin) / (Wxmax - Wxmin)
+    # sy = (Vymin - Vymax) / (Wymax - Wymin)  
+
+    # 1. Escala Direta (Sem inverter Vymin e Vymax)
     sx = (Vxmax - Vxmin) / (Wxmax - Wxmin)
-    sy = (Vymin - Vymax) / (Wymax - Wymin)
+    sy = (Vymax - Vymin) / (Wymax - Wymin)
 
     # Combinando as transformações: Translada -> Escala -> Translada
     # Lembrete: A ordem de aplicação é da direita para a esquerda na multiplicação
+    # Passo 1: Translação Negativa (Leva pro centro 0,0)
     m_trans1 = translation(-Wxmin, -Wymin)
+
+    # Passo 2: Escala (Esmaga para caber no minimapa)
     m_scale  = scale(sx, sy)
-    m_trans2 = translation(Vxmin, Vymax)
-    
-    # Matriz final = T2 * S * T1
+
+    # Passo 3: Translação Positiva (Posiciona no canto da tela)
+    # ---> O ERRO ESTAVA AQUI! TEM QUE SER Vymin <---
+    m_trans2 = translation(Vxmin, Vymin) 
+
+    # Retorna a multiplicação (T2 * S * T1)
     return m_trans2 @ m_scale @ m_trans1
