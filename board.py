@@ -88,12 +88,12 @@ class Board:
         for card in self.cards:
             # Verifica colisão simples via Bounding Box (AABB)
             if (card.x <= mouse_x <= card.x + card.width and card.y <= mouse_y <= card.y + card.height):
-                
+
                 # Ignora se a carta já estiver virada (state 1), já tiver sido encontrada, ou estiver no meio de uma animação
                 if card.state == 1 or card.is_animating:
                     return "IGNORED"
 
-                # Inicia a animação de virar a carta 
+                # Inicia a animação de virar a carta
                 card.start_flip()
                 self.flipped_cards.append(card)
 
@@ -104,6 +104,28 @@ class Board:
                 return "FLIPPED"
 
         return "IGNORED"
+
+    def handle_mouse_motion(self, mouse_x, mouse_y):
+        """
+        Verifica continuamente se o mouse está sobre alguma carta
+        para aplicar o efeito de Hover.
+        """
+        # Se o jogo estiver travado (errou o par) não faz hover
+        if self.is_locked:
+            for card in self.cards:
+                card.is_hovered = False
+            return
+
+        for card in self.cards:
+            # Só faz hover em cartas que estão viradas pra baixo (0) e não estão animando
+            if card.state == 0 and not card.is_animating:
+                if (card.x <= mouse_x <= card.x + card.width and
+                    card.y <= mouse_y <= card.y + card.height):
+                    card.is_hovered = True
+                else:
+                    card.is_hovered = False
+            else:
+                card.is_hovered = False
 
     def check_match(self):
         """
@@ -128,8 +150,8 @@ class Board:
         """
         for card in self.flipped_cards:
             # Aciona a animação 3D para as cartas voltarem a ficar escondidas
-            card.start_flip()  
-            
+            card.start_flip()
+
         self.flipped_cards.clear()
         self.is_locked = False
 
@@ -139,12 +161,22 @@ class Board:
 
     def draw(self, surface, texture_verso, bg_color, force=False):
         """
-        Delega a responsabilidade de renderização para as cartas.
-        Futuramente, a câmera passará por aqui.
+        Renderiza o tabuleiro usando Z-Order (Algoritmo do Pintor).
+        Garante que cartas em animação/hover fiquem fisicamente por cima das outras.
         """
+
+        total_width = (self.card_width + self.spacing_x) * 6
+        total_height = (self.card_height + self.spacing_y) * 4
+
+        board_area = (self.start_x - 30, self.start_y - 30, total_width + 60, total_height + 60)
+        pygame.draw.rect(surface, bg_color, board_area)
+
         for card in self.cards:
-            if card.dirty or force:
-                # Limpa a área da carta antes de desenhar (Dirty Rectangle)
-                pygame.draw.rect(surface, bg_color, (card.x, card.y, card.width, card.height))
+            if not getattr(card, 'is_hovered', False) and not card.is_animating:
                 card.draw(surface, texture_verso)
-                card.dirty = False  # Carta agora está limpa
+                card.dirty = False
+
+        for card in self.cards:
+            if getattr(card, 'is_hovered', False) or card.is_animating:
+                card.draw(surface, texture_verso)
+                card.dirty = False

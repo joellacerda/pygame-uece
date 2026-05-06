@@ -1,4 +1,5 @@
 import pygame
+import math
 from library import texture
 from library import transformations
 from library import filling
@@ -22,7 +23,10 @@ class Card:
         self.is_animating = False
         self.shrinking = False
 
-    
+        self.is_hovered = False
+        self.was_hovered = False
+
+
     def get_vertices(self):
         """Retorna os 4 cantos da carta no mundo 2D baseados na posição absoluta"""
         return [
@@ -31,9 +35,7 @@ class Card:
             (self.x + self.width, self.y + self.height),
             (self.x, self.y + self.height)
         ]
-   
-   
-   
+
     def get_uvs(self):
         return [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)]
 
@@ -138,9 +140,19 @@ class Card:
         self.is_animating = True
         self.shrinking = True
 
+    def start_spin(self):
+        import random
+        self.is_spinning = True
+        self.spin_speed = random.uniform(0.05, 0.15) * random.choice([-1, 1])
+
     def update(self):
+        if self.is_hovered != self.was_hovered:
+            self.dirty = True
+            self.was_hovered = self.is_hovered
+
         if not self.is_animating:
             return
+
         self.dirty = True
         speed = 0.12
         if self.shrinking:
@@ -158,9 +170,24 @@ class Card:
 
     def draw(self, surface, texture_verso):
         if not self.is_animating:
-            target = self.surface_back if self.state == 0 else self.surface_front
-            if target:
-                surface.blit(target, (self.x, self.y))
+            # Se o mouse estiver em cima E a carta estiver virada para baixo
+            if getattr(self, 'is_hovered', False) and self.state == 0:
+                cx, cy = self.width / 2, self.height / 2
+
+                m_center = transformations.translation(-cx, -cy)
+                m_rot = transformations.rotation(math.radians(-5))
+                m_rise = transformations.translation(0, -12)
+                m_pos = transformations.translation(cx + self.x, cy + self.y)
+
+                m_final = transformations.multiply_matrices(m_rot, m_center)
+                m_final = transformations.multiply_matrices(m_rise, m_final)
+                m_final = transformations.multiply_matrices(m_pos, m_final)
+
+                self._render_polygons(surface, False, texture_verso, m_transform=m_final)
+            else:
+                target = self.surface_back if self.state == 0 else self.surface_front
+                if target:
+                    surface.blit(target, (self.x, self.y))
             return
 
         cx, cy = self.width / 2, self.height / 2

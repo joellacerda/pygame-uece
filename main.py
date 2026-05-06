@@ -31,7 +31,7 @@ img_thelmo = pygame.image.load(Path(__file__).parent /"assets"/"professors"/"the
 professors_data = [
     ("paixao", img_paixao), ("guy", img_guy), ("ana", img_ana),
     ("henrique", img_henrique), ("ismayle", img_ismayle), ("negreiros", img_negreiros),
-    ("santos", img_santos), ("ph", img_paulo), ("pereira", img_pereira),
+    ("matheus", img_santos), ("ph", img_paulo), ("pereira", img_pereira),
     ("rafael", img_rafael), ("rivas", img_rivas), ("thelmo", img_thelmo)
 ]
 
@@ -47,7 +47,7 @@ SCREEN_VERTICES = [(0, 0), (1280, 0), (1280, 720), (0, 720)]
 
 game_board = Board(
     start_x=201,
-    start_y=152, # Subiu 5 pixels
+    start_y=152,
     card_width=146,
     card_height=131,
     spacing_x=6,
@@ -190,6 +190,7 @@ def victory_screen(elapsed_time):
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+
             if event.type == pygame.MOUSEBUTTONDOWN or event.type == pygame.KEYDOWN:
                 main_menu()
 
@@ -220,6 +221,8 @@ def play():
 
     delay_start_time = 0
     waiting_for_delay = False
+
+    celebration_start = 0
 
     # Movendo para a esquerda (X=20) e diminuindo o tamanho (Largura=150, Altura=100)
     radar = Minimap(20, 64, 150, 100)
@@ -255,14 +258,18 @@ def play():
         radar.draw(screen, game_board)
 
         if game_board.is_game_over():
-            pygame.display.update()
-            pygame.time.delay(1000)
-            victory_screen(elapsed_time)
+            if current_time - celebration_start > 4000:
+                    pygame.display.update()
+                    victory_screen(elapsed_time)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+
+            if event.type == pygame.MOUSEMOTION:
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                game_board.handle_mouse_motion(mouse_x, mouse_y)
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mouse_x, mouse_y = pygame.mouse.get_pos()

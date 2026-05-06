@@ -1,6 +1,6 @@
 import pygame
 from library import transformations
-from library import filling 
+from library import filling
 
 class Minimap:
     def __init__(self, view_x, view_y, view_width, view_height):
@@ -12,13 +12,14 @@ class Minimap:
         self.Vxmax = view_x + view_width
         self.Vymax = view_y + view_height
         self.viewport = (self.Vxmin, self.Vymin, self.Vxmax, self.Vymax)
-        
+
         # Cores padrão do Minimapa
         self.COLOR_BG = (30, 40, 50)         # Fundo escuro do radar
         self.COLOR_BORDER = (241, 196, 15)   # Borda Amarela
         self.COLOR_HIDDEN = (236, 240, 241)  # Carta pra baixo (Branco)
         self.COLOR_FLIPPED = (241, 196, 15)  # Carta virada agora (Amarelo)
         self.COLOR_MATCH = (46, 204, 113)    # Par encontrado (Verde)
+        self.COLOR_MISMATCH = (231, 76, 60)  # Par errado (Vermelho)
 
     def draw(self, screen, board):
         """
@@ -35,7 +36,7 @@ class Minimap:
 
         # 3. Desenha o fundo e a borda do Minimapa
         fundo_vertices = [
-            (self.Vxmin, self.Vymin), (self.Vxmax, self.Vymin), 
+            (self.Vxmin, self.Vymin), (self.Vxmax, self.Vymin),
             (self.Vxmax, self.Vymax), (self.Vxmin, self.Vymax)
         ]
         filling.draw_filled_polygon(screen, fundo_vertices, self.COLOR_BG, self.COLOR_BORDER)
@@ -44,7 +45,7 @@ class Minimap:
         for card in board.cards:
             # Pega as coordenadas gigantes da mesa
             vertices_reais = card.get_vertices()
-            
+
             # Aplica a matriz de Escala/Translação para esmagar pro radar
             vertices_mini = transformations.apply_transformation(matriz_camera, vertices_reais)
 
@@ -52,7 +53,10 @@ class Minimap:
             if card.state == 1 and card not in board.flipped_cards:
                 cor = self.COLOR_MATCH
             elif card in board.flipped_cards:
-                cor = self.COLOR_FLIPPED
+                if board.is_locked:
+                    cor = self.COLOR_MISMATCH
+                else:
+                    cor = self.COLOR_FLIPPED
             else:
                 cor = self.COLOR_HIDDEN
 
