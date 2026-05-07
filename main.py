@@ -266,9 +266,15 @@ def play():
 
     font_LOGO = pygame.font.SysFont("Montserrat", 20)
     font_STATUS = pygame.font.SysFont("Courier", 16)
+    font_UI_SMALL = pygame.font.SysFont("Courier", 14, bold=True)
 
     # Toca a música em loop infinito
     pygame.mixer.music.play(-1)
+
+    game_board.setup_board(professors_data, img_uece)
+    game_board.matches_found = 0
+    game_board.flipped_cards.clear()
+    game_board.is_locked = False
 
     start_ticks = pygame.time.get_ticks()
     elapsed_time = 0
@@ -296,12 +302,12 @@ def play():
     MISMATCH_EVENT = pygame.USEREVENT + 1
     MATCH_EVENT = pygame.USEREVENT + 2
 
-    # Botão de Menu e Restart (posições na Screen Space)
-    font_UI_SMALL = pygame.font.SysFont("Courier", 14, bold=True)
-
     # Vértices para os botões no topo (Tab Bar)
     RESTART_VERTS = [(900, 7), (1070, 7), (1070, 37), (900, 37)]
     MENU_VERTS    = [(1085, 7), (1265, 7), (1265, 37), (1085, 37)]
+
+    BTN_RESTART = Button(screen, RESTART_VERTS, "REINICIAR", font_UI_SMALL, WHITE, ROYAL_DARK_BLUE, SEA_DARK_BLUE)
+    BTN_MENU    = Button(screen, MENU_VERTS, "VOLTAR MENU", font_UI_SMALL, WHITE, GRAPHITE, BLACK)
 
     while True:
         # ==========================================
@@ -348,7 +354,6 @@ def play():
                     # Clique no Botão Voltar Menu
                     elif BTN_MENU.checkForInput(mouse_pos):
                         pygame.mixer.music.stop()
-                        main_menu()
                         return # Sai da função play e volta pro menu
 
                 # 2. SE NÃO CLICOU NA UI, INTERAGE COM O TABULEIRO (WORLD SPACE)

@@ -39,6 +39,9 @@ class Board:
         Duplica a lista de professores para criar os pares, embaralha e
         posiciona cada carta matematicamente no grid 6x4.
         """
+
+        self.cards = []
+        
         # Duplica os dados para formar os pares
         deck = professors_data * 2
 
