@@ -14,20 +14,39 @@ clock = pygame.time.Clock()
 running = True
 screen = pygame.display.set_mode((1280, 720))
 
+SOUNDS_DIR = Path(__file__).parent/ "assets" / "sounds"
+IMGS_DIR = Path(__file__).parent / "assets" / "professors"
+
+#CARREGA OS SONS
+pygame.mixer.init()
+mismatch_sound = pygame.mixer.Sound(str(SOUNDS_DIR / "mismatch.mp3"))
+mismatch_sound.set_volume(0.2)  
+match_sound = pygame.mixer.Sound(str(SOUNDS_DIR / "match.mp3"))
+match_sound.set_volume(0.2)
+cardflip_sound = pygame.mixer.Sound(str(SOUNDS_DIR / "cardflip (2).mp3"))
+cardflip_sound.set_volume(0.4)
+no_interaction_sound = pygame.mixer.Sound(str(SOUNDS_DIR / "already_flipped.mp3"))
+no_interaction_sound.set_volume(0.4)
+victory_sound = pygame.mixer.Sound(str(SOUNDS_DIR / "victory.mp3"))
+victory_sound.set_volume(1.0)
+bg_music = pygame.mixer.music.load(str(SOUNDS_DIR / "musica(click - C418).mp3"))
+pygame.mixer.music.set_volume(0.4)
+
+
 # CARREGA AS FOTOS
-img_uece = pygame.image.load(Path(__file__).parent /"assets"/"professors"/"logo_uece.png").convert_alpha()
-img_paixao = pygame.image.load(Path(__file__).parent /"assets"/"professors"/"matheus_paixao.png").convert_alpha()
-img_guy = pygame.image.load(Path(__file__).parent /"assets"/"professors"/"guy_barroso.png").convert_alpha()
-img_ana = pygame.image.load(Path(__file__).parent /"assets"/"professors"/"ana_luiza.png").convert_alpha()
-img_henrique = pygame.image.load(Path(__file__).parent /"assets"/"professors"/"henrique.png").convert_alpha()
-img_ismayle = pygame.image.load(Path(__file__).parent /"assets"/"professors"/"ismayle.png").convert_alpha()
-img_negreiros = pygame.image.load(Path(__file__).parent /"assets"/"professors"/"marcos_negreiros.png").convert_alpha()
-img_santos = pygame.image.load(Path(__file__).parent /"assets"/"professors"/"matheus_santos.png").convert_alpha()
-img_paulo = pygame.image.load(Path(__file__).parent /"assets"/"professors"/"paulo_henrique_maia.png").convert_alpha()
-img_pereira = pygame.image.load(Path(__file__).parent /"assets"/"professors"/"pereira.png").convert_alpha()
-img_rafael = pygame.image.load(Path(__file__).parent /"assets"/"professors"/"rafael.png").convert_alpha()
-img_rivas = pygame.image.load(Path(__file__).parent /"assets"/"professors"/"rivas.png").convert_alpha()
-img_thelmo = pygame.image.load(Path(__file__).parent /"assets"/"professors"/"thelmo.png").convert_alpha()
+img_uece = pygame.image.load(IMGS_DIR/"logo_uece.png").convert_alpha()
+img_paixao = pygame.image.load(IMGS_DIR/"matheus_paixao.png").convert_alpha()
+img_guy = pygame.image.load(IMGS_DIR/"guy_barroso.png").convert_alpha()
+img_ana = pygame.image.load(IMGS_DIR/"ana_luiza.png").convert_alpha()
+img_henrique = pygame.image.load(IMGS_DIR/"henrique.png").convert_alpha()
+img_ismayle = pygame.image.load(IMGS_DIR/"ismayle.png").convert_alpha()
+img_negreiros = pygame.image.load(IMGS_DIR/"marcos_negreiros.png").convert_alpha()
+img_santos = pygame.image.load(IMGS_DIR/"matheus_santos.png").convert_alpha()
+img_paulo = pygame.image.load(IMGS_DIR/"paulo_henrique_maia.png").convert_alpha()
+img_pereira = pygame.image.load(IMGS_DIR/"pereira.png").convert_alpha()
+img_rafael = pygame.image.load(IMGS_DIR/"rafael.png").convert_alpha()
+img_rivas = pygame.image.load(IMGS_DIR/"rivas.png").convert_alpha()
+img_thelmo = pygame.image.load(IMGS_DIR/"thelmo.png").convert_alpha()
 
 professors_data = [
     ("paixao", img_paixao), ("guy", img_guy), ("ana", img_ana),
@@ -222,6 +241,9 @@ def draw_brazil_flag(surface, x, y, width):
 def victory_screen(elapsed_time):
     """Exibe a tela final de vitória com o tempo total."""
     pygame.display.set_caption("THANKS FOR PLAYING!")
+    victory_sound = pygame.mixer.Sound(str(SOUNDS_DIR / "victory.mp3"))
+    victory_sound.set_volume(0.4)
+    victory_sound.play()
 
     total_seconds = elapsed_time // 1000
     minutes = total_seconds // 60
@@ -267,6 +289,8 @@ def play():
 
     font_LOGO = pygame.font.SysFont("Montserrat", 20)
     font_STATUS = pygame.font.SysFont("Courier", 16)
+
+    pygame.mixer.music.play(-1) #tocado em loop infinito
 
     start_ticks = pygame.time.get_ticks()
     elapsed_time = 0
@@ -338,14 +362,36 @@ def play():
                 mouse_x, mouse_y = pygame.mouse.get_pos()
                 game_board.handle_mouse_motion(mouse_x, mouse_y)
 
+            MISMATCH_EVENT = pygame.USEREVENT + 1
+            if event.type == MISMATCH_EVENT:
+                pygame.time.set_timer(MISMATCH_EVENT, 0)   # cancela o timer repetido
+                mismatch_sound.play()
+
+            MATCH_EVENT = pygame.USEREVENT + 2
+            if event.type == MATCH_EVENT:
+                pygame.time.set_timer(MATCH_EVENT, 0)      # cancela o timer repetido
+                match_sound.play()  
+
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
                 resultado = game_board.handle_click(mouse_x, mouse_y)
-
+                
+                cardflip_sound = pygame.mixer.Sound(str(SOUNDS_DIR / "cardflip (2).mp3"))
+                cardflip_sound.set_volume(0.4)
                 if resultado == "MISMATCH":
+                    cardflip_sound.play()
+                    pygame.time.set_timer(MISMATCH_EVENT, 400)                 # agenda o mismatch para 400ms
                     waiting_for_delay = True
-                    delay_start_time = pygame.time.get_ticks()
-
+                    delay_start_time = pygame.time.get_ticks() + 400
+                if resultado == "MATCH":
+                    cardflip_sound.play()
+                    pygame.time.set_timer(MATCH_EVENT, 400) 
+                    waiting_for_delay = True
+                    delay_start_time = pygame.time.get_ticks() + 400
+                if resultado =="IGNORED":
+                    no_interaction_sound.play()
+                if resultado == "FLIPPED":
+                    cardflip_sound.play()
         pygame.display.update()
         clock.tick(60)
 
