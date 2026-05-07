@@ -1,7 +1,7 @@
 from . import primitives
 
-def scanline_fill(surface,vertices, color):
-    """
+def scanline_fill(surface, vertices, color):
+    """"
     Algoritmo de preenchimento Scanline otimizado.
     Utiliza uma Tabela de Arestas Global (GET - Global Edge Table) para organizar
     todas as arestas do polígono baseadas em sua coordenada Y mínima, e uma Tabela
@@ -12,69 +12,48 @@ def scanline_fill(surface,vertices, color):
     vertices: Lista de tuplas com os pontos (x, y) do polígono.
     color: Tupla RGB representando a cor de preenchimento.
     """
-    if not vertices:
-        return
+    # Encontra Y mínimo e máximo
+    ys = [v[1] for v in vertices]
+    y_min = min(ys)
+    y_max = max(ys)
 
     n = len(vertices)
-    y_coords = [v[1] for v in vertices]
-    y_min = int(min(y_coords))
-    y_max = int(max(y_coords))
 
-    # A GET é um dicionário onde a chave é o y_min da aresta
-    get = {}
-    for i in range(n):
-        p1 = vertices[i]
-        p2 = vertices[(i + 1) % n]
+    for y in range(y_min, y_max):
+        intersecoes_x = []
 
-        # Ignora arestas horizontais (não cruzam scanlines de forma útil)
-        if p1[1] == p2[1]:
-            continue
+        for i in range(n):
+            x0, y0 = vertices[i]
+            x1, y1 = vertices[(i + 1) % n]
 
-        # Garante que p1 é o ponto com menor Y (ponto de origem da aresta de cima para baixo)
-        if p1[1] > p2[1]:
-            p1, p2 = p2, p1
+            # Ignora arestas horizontais
+            if y0 == y1:
+                continue
 
-        y_start, y_end = int(p1[1]), int(p2[1])
-        x_at_y_min = float(p1[0])
-        # Inclinação inversa (1/m): quanto X muda para cada 1 píxel de avanço em Y
-        inv_m = (p2[0] - p1[0]) / (p2[1] - p1[1])
+            # Garante y0 < y1
+            if y0 > y1:
+                x0, y0, x1, y1 = x1, y1, x0, y0
 
-        edge = {
-            'y_max': y_end,
-            'x_current': x_at_y_min,
-            'inv_m': inv_m
-        }
+            # Regra Ymin ≤ y < Ymax
+            if y < y0 or y >= y1:
+                continue
 
-        if y_start not in get:
-            get[y_start] = []
-        get[y_start].append(edge)
+            # Calcula interseção
+            x = x0 + (y - y0) * (x1 - x0) / (y1 - y0)
+            intersecoes_x.append(x)
 
-    # Processar usando an Active Edge Table (AET)
-    aet = []
+        # Ordena interseções
+        intersecoes_x.sort()
 
-    for y in range(y_min, y_max + 1):
-        # Mover arestas da GET para a AET quando alcançamos seu y_min
-        if y in get:
-            aet.extend(get[y])
+        # Preenche entre pares
+        for i in range(0, len(intersecoes_x), 2):
+            if i + 1 < len(intersecoes_x):
+                x_inicio = int(round(intersecoes_x[i]))
+                x_fim = int(round(intersecoes_x[i + 1]))
 
-        # Remover arestas da AET quando alcançamos seu y_max
-        # Usa-se y_max como limite exclusivo para evitar sobreposição de pixels nos vértices
-        aet = [edge for edge in aet if edge['y_max'] > y]
-
-        # Ordenar a AET pelo x_current da esquerda para a direita
-        aet.sort(key=lambda edge: edge['x_current'])
-
-        # Preencher os pixels na linha horizontal (scanline) entre pares de arestas
-        for i in range(0, len(aet), 2):
-            if i + 1 < len(aet):
-                x_start = int(round(aet[i]['x_current']))
-                x_end = int(round(aet[i+1]['x_current']))
-                for x in range(x_start, x_end):
+                for x in range(x_inicio, x_fim + 1):
                     primitives.set_pixel(surface, x, y, color)
 
-        # Atualizar o x_current para a próxima scanline (y + 1) incrementando a inclinação inversa
-        for edge in aet:
-            edge['x_current'] += edge['inv_m']
 
 def scanline_fill_gradient(surface, vertices, colors):
     """
