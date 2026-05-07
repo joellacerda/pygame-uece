@@ -8,7 +8,7 @@ class Button():
         self.text_color = text_color
         self.background_color = background_color
         self.line_color = line_color
-        
+
         # --- OTIMIZAÇÃO: BOUNDING BOX ---
         # Calcula os limites retangulares (AABB) do polígono uma única vez
         self.min_x = min(v[0] for v in self.vertices)
@@ -18,7 +18,7 @@ class Button():
 
         self.text = self.font.render(self.text_input, True, self.text_color)
         filling.draw_filled_polygon(self.surface, self.vertices, self.background_color, self.line_color)
-        
+
         center_x = sum(v[0] for v in self.vertices) / len(self.vertices)
         center_y = sum(v[1] for v in self.vertices) / len(self.vertices)
         text_rect = self.text.get_rect(center=(center_x, center_y))
@@ -32,7 +32,7 @@ class Button():
         x, y = position
 
         # 1. BROAD PHASE (Fase Larga): Teste de Bounding Box Simples
-        # Se o ponto estiver fora do retângulo que envolve o botão, 
+        # Se o ponto estiver fora do retângulo que envolve o botão,
         # nem perdemos tempo com o Ray Casting complexo.
         if not (self.min_x <= x <= self.max_x and self.min_y <= y <= self.max_y):
             return False

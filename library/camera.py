@@ -17,6 +17,11 @@ class Camera:
         self.window = list(window)
         self.viewport = list(viewport)
 
+        self.world_min_x = -300
+        self.world_max_x = 1600
+        self.world_min_y = -300
+        self.world_max_y = 1000
+
     def get_matrix(self):
         """
         Retorna a matriz 3x3 de transformação Janela-Viewport.
@@ -28,10 +33,21 @@ class Camera:
         """
         Move a lente da câmera pelo mundo (Translação da Janela).
         """
-        self.window[0] += dx
-        self.window[2] += dx
-        self.window[1] += dy
-        self.window[3] += dy
+        # Calcula as novas coordenadas potenciais
+        new_x0 = self.window[0] + dx
+        new_x2 = self.window[2] + dx
+        new_y1 = self.window[1] + dy
+        new_y3 = self.window[3] + dy
+
+        # Só aplica o movimento em X se a janela continuar dentro do limite do mundo
+        if new_x0 > self.world_min_x and new_x2 < self.world_max_x:
+            self.window[0] = new_x0
+            self.window[2] = new_x2
+
+        # Só aplica o movimento em Y se a janela continuar dentro do limite do mundo
+        if new_y1 > self.world_min_y and new_y3 < self.world_max_y:
+            self.window[1] = new_y1
+            self.window[3] = new_y3
 
     def zoom(self, factor):
         """
@@ -41,16 +57,14 @@ class Camera:
         """
         width = self.window[2] - self.window[0]
         height = self.window[3] - self.window[1]
+        cx, cy = self.window[0] + width / 2, self.window[1] + height / 2
 
-        # Encontra o ponto central da janela
-        cx = self.window[0] + width / 2
-        cy = self.window[1] + height / 2
+        new_w, new_h = width * factor, height * factor
 
-        # Calcula as novas dimensões
-        new_w = width * factor
-        new_h = height * factor
+        # Evita que o zoom out (afastar) fique maior que o próprio mundo
+        if new_w > (self.world_max_x - self.world_min_x):
+            return
 
-        # Define as novas bordas mantendo o centro
         self.window[0] = cx - new_w / 2
         self.window[2] = cx + new_w / 2
         self.window[1] = cy - new_h / 2

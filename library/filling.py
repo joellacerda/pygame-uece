@@ -164,7 +164,7 @@ def flood_fill(surface, x, y, new_color):
         while l >= 0 and primitives.read_pixel(surface, l, curr_y) == target_color:
             primitives.set_pixel(surface, l, curr_y, new_color)
             l -= 1
-        
+
         # Encontra o limite direito do segmento da mesma cor
         r = curr_x + 1
         while r < width and primitives.read_pixel(surface, r, curr_y) == target_color:
@@ -177,10 +177,10 @@ def flood_fill(surface, x, y, new_color):
         # Verifica as linhas imediatamente acima e abaixo
         for y_offset in [-1, 1]:
             next_y = curr_y + y_offset
-            
+
             if 0 <= next_y < height:
                 span_added = False
-                
+
                 # Percorre o intervalo horizontal que acabamos de preencher
                 for i in range(l + 1, r):
                     if primitives.read_pixel(surface, i, next_y) == target_color:

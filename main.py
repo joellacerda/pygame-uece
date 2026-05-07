@@ -2,6 +2,7 @@ from pathlib import Path
 from board import Board
 from library import primitives
 from library import filling
+from library import camera
 from button import Button
 import pygame
 import sys
@@ -14,13 +15,13 @@ clock = pygame.time.Clock()
 running = True
 screen = pygame.display.set_mode((1280, 720))
 
-SOUNDS_DIR = Path(__file__).parent/ "assets" / "sounds"
+SOUNDS_DIR = Path(__file__).parent / "assets" / "sounds"
 IMGS_DIR = Path(__file__).parent / "assets" / "professors"
 
-#CARREGA OS SONS
+# CARREGA OS SONS
 pygame.mixer.init()
 mismatch_sound = pygame.mixer.Sound(str(SOUNDS_DIR / "mismatch.mp3"))
-mismatch_sound.set_volume(0.2)  
+mismatch_sound.set_volume(0.2)
 match_sound = pygame.mixer.Sound(str(SOUNDS_DIR / "match.mp3"))
 match_sound.set_volume(0.2)
 cardflip_sound = pygame.mixer.Sound(str(SOUNDS_DIR / "cardflip (2).mp3"))
@@ -87,12 +88,10 @@ def render_menu_background():
     surf.fill(SEA_DARK_BLUE)
 
     # Criamos áreas fechadas com linhas brancas finas
-    # Cruzando a tela em X
     primitives.draw_line(surf, 0, 0, 1280, 720, (30, 45, 90))
     primitives.draw_line(surf, 1280, 0, 0, 720, (30, 45, 90))
 
     # Preenchemos os triângulos resultantes com tons diferentes de azul
-    # Nota: O Flood Fill aqui mostra seu valor ao preencher áreas delimitadas por geometria
     filling.flood_fill(surf, 640, 50, (10, 20, 50))      # Topo
     filling.flood_fill(surf, 640, 670, (15, 30, 70))     # Base
     filling.flood_fill(surf, 50, 360, (20, 35, 80))      # Esquerda
@@ -104,12 +103,10 @@ def main_menu():
     global menu_bg_cache
     pygame.display.set_caption("Menu")
 
-    # Gera o fundo apenas se não estiver em cache (Desempenho)
     if menu_bg_cache is None:
         menu_bg_cache = render_menu_background()
 
     while True:
-        # Usa o fundo procedural cacheado
         screen.blit(menu_bg_cache, (0, 0))
 
         CENTRAL_SQUARE = [(240, 57), (1040, 57), (1040, 663), (240, 663)]
@@ -148,10 +145,6 @@ def main_menu():
         pygame.display.update()
         clock.tick(60)
 
-# --- SUPERFÍCIES DE CACHE PARA UI ---
-logo_surface = None
-status_surface = None
-
 def render_logo_static(font_LOGO):
     surf = pygame.Surface((1280, 44))
     LOGO_VERTICES = [(0, 0), (1280, 0), (1280, 44), (0, 44)]
@@ -180,38 +173,30 @@ def render_status_bar(font_STATUS, matches, total_pairs, elapsed_time):
 
 def draw_brazil_flag(surface, x, y, width):
     height = int(width * 14 / 20)
-    
-    # Cores Oficiais
+
     GREEN = (0, 156, 59)
     YELLOW = (255, 223, 0)
     BLUE = (0, 39, 118)
     WHITE = (255, 255, 255)
 
-    # 1. Retângulo Verde (Fundo) com scanline_fill_gradient
     rect_vertices = [(x, y), (x + width, y), (x + width, y + height), (x, y + height)]
     rect_colors = [
-        (0, 180, 70),  # Verde-claro (topo-esquerda)
-        GREEN,          # Topo-direita
-        (0, 100, 30),  # Verde-escuro (baixo-direita)
-        GREEN           # Baixo-esquerda
+        (0, 180, 70), GREEN, (0, 100, 30), GREEN
     ]
     filling.scanline_fill_gradient(surface, rect_vertices, rect_colors)
 
-    # 2. Losango Amarelo com scanline_fill
     margin = (width / 20.0) * 1.7
     rhombus_vertices = [
-        (x + width / 2, y + margin),           # Superior
-        (x + width - margin, y + height / 2),  # Direita
-        (x + width / 2, y + height - margin),  # Inferior
-        (x + margin, y + height / 2)           # Esquerda
+        (x + width / 2, y + margin),
+        (x + width - margin, y + height / 2),
+        (x + width / 2, y + height - margin),
+        (x + margin, y + height / 2)
     ]
     filling.scanline_fill(surface, rhombus_vertices, YELLOW)
 
-    # 3. Círculo Azul com scanline_fill_gradient
     radius = (width / 20.0) * 3.5
     cx, cy = x + width / 2, y + height / 2
-    
-    # Aproximação do círculo por um polígono para o gradiente
+
     circle_vertices = []
     circle_colors = []
     for i in range(37):
@@ -219,27 +204,21 @@ def draw_brazil_flag(surface, x, y, width):
         px = cx + radius * math.cos(angle)
         py = cy + radius * math.sin(angle)
         circle_vertices.append((px, py))
-        
+
         t = (py - (cy - radius)) / (2 * radius)
         color = filling.interpolate_color((60, 100, 255), BLUE, t)
         circle_colors.append(color)
-    
+
     filling.scanline_fill_gradient(surface, circle_vertices, circle_colors)
     primitives.draw_circle(surface, int(cx), int(cy), int(radius), BLUE)
 
-    # 4. Faixa Branca com elipses
     for offset in range(-1, 2):
         primitives.draw_ellipse(
-            surface, 
-            int(cx), 
-            int(cy + radius * 0.2) + offset, 
-            int(radius * 1.15), 
-            int(radius * 0.45), 
-            WHITE
+            surface, int(cx), int(cy + radius * 0.2) + offset,
+            int(radius * 1.15), int(radius * 0.45), WHITE
         )
 
 def victory_screen(elapsed_time):
-    """Exibe a tela final de vitória com o tempo total."""
     pygame.display.set_caption("THANKS FOR PLAYING!")
     victory_sound = pygame.mixer.Sound(str(SOUNDS_DIR / "victory.mp3"))
     victory_sound.set_volume(0.4)
@@ -256,14 +235,11 @@ def victory_screen(elapsed_time):
     while True:
         screen.fill(SEA_DARK_BLUE)
 
-        # Retângulo central de vitória expandido para caber a bandeira
         VICTORY_RECT = [(340, 180), (940, 180), (940, 540), (340, 540)]
         filling.draw_filled_polygon(screen, VICTORY_RECT, DARK_BLUE_GRAY, MUSTARD_YELLOW)
 
-        # Desenha a bandeira do Brasil
         draw_brazil_flag(screen, 540, 200, 200)
 
-        # Texto "Você Venceu!" e Tempo ajustados
         text_victory = font_TITLE.render("Você Venceu!", True, MUSTARD_YELLOW)
         rect_victory = text_victory.get_rect(center=(640, 390))
         screen.blit(text_victory, rect_victory)
@@ -290,7 +266,8 @@ def play():
     font_LOGO = pygame.font.SysFont("Montserrat", 20)
     font_STATUS = pygame.font.SysFont("Courier", 16)
 
-    pygame.mixer.music.play(-1) #tocado em loop infinito
+    # Toca a música em loop infinito
+    pygame.mixer.music.play(-1)
 
     start_ticks = pygame.time.get_ticks()
     elapsed_time = 0
@@ -300,26 +277,99 @@ def play():
     logo_surface = render_logo_static(font_LOGO)
     status_surface = render_status_bar(font_STATUS, game_board.matches_found, game_board.total_pairs, 0)
 
-    screen.fill(SEA_DARK_BLUE)
-    game_board.draw(screen, img_uece, SEA_DARK_BLUE, force=True)
-
+    # Reset do Board
     game_board.flipped_cards.clear()
     game_board.is_locked = False
     game_board.matches_found = 0
 
     delay_start_time = 0
     waiting_for_delay = False
-
     celebration_start = 0
 
-    # Movendo para a esquerda (X=20) e diminuindo o tamanho (Largura=150, Altura=100)
+    # Instanciando UI e Câmera
     radar = Minimap(20, 64, 150, 100)
+    zoom_level = 1.0
+    main_camera = camera.Camera(window=[0, 0, 1280, 720], viewport=[0, 0, 1280, 720])
 
+    # Cria os identificadores para os USEREVENTS
+    MISMATCH_EVENT = pygame.USEREVENT + 1
+    MATCH_EVENT = pygame.USEREVENT + 2
 
     while True:
-        current_time = pygame.time.get_ticks()
+        # ==========================================
+        # 1. TRATAMENTO DE INPUTS E EVENTOS
+        # ==========================================
+        keys = pygame.key.get_pressed()
+        pan_speed = 15
+        if keys[pygame.K_LEFT]: main_camera.pan(-pan_speed, 0)
+        if keys[pygame.K_RIGHT]: main_camera.pan(pan_speed, 0)
+        if keys[pygame.K_UP]: main_camera.pan(0, -pan_speed)
+        if keys[pygame.K_DOWN]: main_camera.pan(0, pan_speed)
 
-        # CHAMA O MOTOR DE ANIMAÇÃO AQUI
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+            # --- EVENTOS DE ÁUDIO DO COLEGA ---
+            if event.type == MISMATCH_EVENT:
+                pygame.time.set_timer(MISMATCH_EVENT, 0)   # cancela o timer
+                mismatch_sound.play()
+
+            if event.type == MATCH_EVENT:
+                pygame.time.set_timer(MATCH_EVENT, 0)      # cancela o timer
+                match_sound.play()
+
+            # --- EVENTOS DE RATO COM CÂMERA (SUA ALTERAÇÃO) ---
+            if event.type in [pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN]:
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+
+                # Desfazemos o Zoom e o Pan para saber onde o mouse está no MUNDO
+                m_view = main_camera.get_matrix()
+                sx, sy = m_view[0][0], m_view[1][1]
+                tx, ty = m_view[0][2], m_view[1][2]
+                world_mouse_x = (mouse_x - tx) / sx
+                world_mouse_y = (mouse_y - ty) / sy
+
+                if event.type == pygame.MOUSEMOTION:
+                    game_board.handle_mouse_motion(world_mouse_x, world_mouse_y)
+
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    resultado = game_board.handle_click(world_mouse_x, world_mouse_y)
+
+                    if resultado == "MISMATCH":
+                        cardflip_sound.play()
+                        pygame.time.set_timer(MISMATCH_EVENT, 400) # delay som de erro
+                        waiting_for_delay = True
+                        delay_start_time = pygame.time.get_ticks() + 400
+
+                    elif resultado == "MATCH":
+                        cardflip_sound.play()
+                        pygame.time.set_timer(MATCH_EVENT, 400) # delay som acerto
+                        waiting_for_delay = True
+                        delay_start_time = pygame.time.get_ticks() + 400
+
+                    elif resultado == "IGNORED":
+                        no_interaction_sound.play()
+
+                    elif resultado == "FLIPPED":
+                        cardflip_sound.play()
+
+            # --- EVENTOS DE ZOOM ---
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_EQUALS or event.key == pygame.K_KP_PLUS:
+                    if zoom_level < 2.0:
+                        zoom_level += 0.2
+                        main_camera.zoom(0.8)
+                if event.key == pygame.K_MINUS or event.key == pygame.K_KP_MINUS:
+                    if zoom_level > 0.6:
+                        zoom_level -= 0.2
+                        main_camera.zoom(1.25)
+
+        # ==========================================
+        # 2. ATUALIZAÇÃO DA LÓGICA E ESTADOS
+        # ==========================================
+        current_time = pygame.time.get_ticks()
         game_board.update()
 
         if not game_board.is_game_over():
@@ -327,24 +377,12 @@ def play():
 
         current_second = elapsed_time // 1000
 
-        if waiting_for_delay:
-            if current_time - delay_start_time > 1000:
-                game_board.reset_mismatch()
-                waiting_for_delay = False
+        # Verifica se o delay de cartas erradas acabou
+        if waiting_for_delay and (current_time - delay_start_time > 1000):
+            game_board.reset_mismatch()
+            waiting_for_delay = False
 
-        if current_second != last_second or game_board.matches_found != last_matches_count:
-            status_surface = render_status_bar(font_STATUS, game_board.matches_found, game_board.total_pairs, elapsed_time)
-            last_second = current_second
-            last_matches_count = game_board.matches_found
-
-        screen.blit(logo_surface, (0, 0))
-        screen.blit(status_surface, (208, 64))
-
-        game_board.draw(screen, img_uece, SEA_DARK_BLUE)
-
-        # Desenha o radar no canto da tela (Janela -> Viewport)
-        radar.draw(screen, game_board)
-
+        # Verifica Game Over
         if game_board.is_game_over():
             if celebration_start == 0:
                 celebration_start = current_time
@@ -353,45 +391,27 @@ def play():
                     pygame.display.update()
                     victory_screen(elapsed_time)
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
+        # Atualiza o cache da barra de status se necessário
+        if current_second != last_second or game_board.matches_found != last_matches_count:
+            status_surface = render_status_bar(font_STATUS, game_board.matches_found, game_board.total_pairs, elapsed_time)
+            last_second = current_second
+            last_matches_count = game_board.matches_found
 
-            if event.type == pygame.MOUSEMOTION:
-                mouse_x, mouse_y = pygame.mouse.get_pos()
-                game_board.handle_mouse_motion(mouse_x, mouse_y)
+        # ==========================================
+        # 3. RENDERIZAÇÃO
+        # ==========================================
+        # A) Fundo
+        screen.fill(SEA_DARK_BLUE)
 
-            MISMATCH_EVENT = pygame.USEREVENT + 1
-            if event.type == MISMATCH_EVENT:
-                pygame.time.set_timer(MISMATCH_EVENT, 0)   # cancela o timer repetido
-                mismatch_sound.play()
+        # B) Mundo do Jogo (Aplica Matrizes da Câmera)
+        game_board.draw(screen, img_uece, SEA_DARK_BLUE, main_camera)
 
-            MATCH_EVENT = pygame.USEREVENT + 2
-            if event.type == MATCH_EVENT:
-                pygame.time.set_timer(MATCH_EVENT, 0)      # cancela o timer repetido
-                match_sound.play()  
+        # C) Interface do Usuário (Sempre por cima, ignorando a Câmera)
+        screen.blit(logo_surface, (0, 0))
+        screen.blit(status_surface, (208, 64))
+        radar.draw(screen, game_board)
 
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                mouse_x, mouse_y = pygame.mouse.get_pos()
-                resultado = game_board.handle_click(mouse_x, mouse_y)
-                
-                cardflip_sound = pygame.mixer.Sound(str(SOUNDS_DIR / "cardflip (2).mp3"))
-                cardflip_sound.set_volume(0.4)
-                if resultado == "MISMATCH":
-                    cardflip_sound.play()
-                    pygame.time.set_timer(MISMATCH_EVENT, 400)                 # agenda o mismatch para 400ms
-                    waiting_for_delay = True
-                    delay_start_time = pygame.time.get_ticks() + 400
-                if resultado == "MATCH":
-                    cardflip_sound.play()
-                    pygame.time.set_timer(MATCH_EVENT, 400) 
-                    waiting_for_delay = True
-                    delay_start_time = pygame.time.get_ticks() + 400
-                if resultado =="IGNORED":
-                    no_interaction_sound.play()
-                if resultado == "FLIPPED":
-                    cardflip_sound.play()
+        # 4. EXIBIÇÃO NO MONITOR
         pygame.display.update()
         clock.tick(60)
 

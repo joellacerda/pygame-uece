@@ -4,6 +4,7 @@ from library import texture
 from library import transformations
 from library import filling
 from library import primitives
+from library import clipping
 
 class Card:
     def __init__(self, x, y, width, height, id_professor, texture_professor):
@@ -22,7 +23,7 @@ class Card:
         self.scale_x = 1.0
         self.is_animating = False
         self.shrinking = False
-
+        self.is_matched = False
         self.is_hovered = False
         self.was_hovered = False
 
@@ -94,6 +95,8 @@ class Card:
         WHITE = (255, 255, 255)
         YELLOW = (255, 193, 7)
 
+        VIEWPORT_SCREEN = [0, 0, 1280, 720]
+
         border_color = YELLOW if is_front else WHITE
         main_bg_color = (15, 15, 20) if is_front else GRAY_BG
 
@@ -104,19 +107,21 @@ class Card:
                 polys[k] = transformations.apply_transformation(m_transform, polys[k])
 
         filling.draw_filled_polygon(surface, polys['shadow'], BLACK, BLACK)
-        filling.draw_filled_polygon(surface, polys['base'], border_color, border_color)
+        filling.scanline_fill(surface, polys['base'], border_color)
+        clipping.draw_clipped_polygon(surface, polys['base'], VIEWPORT_SCREEN, border_color)
 
         if not is_front:
-            filling.draw_filled_polygon(surface, polys['inner_black'], BLACK, BLACK)
+            filling.scanline_fill(surface, polys['inner_black'], BLACK)
+            clipping.draw_clipped_polygon(surface, polys['inner_black'], VIEWPORT_SCREEN, BLACK)
 
-        filling.draw_filled_polygon(surface, polys['bg'], main_bg_color, main_bg_color)
+        filling.scanline_fill(surface, polys['bg'], main_bg_color)
 
         if is_front:
             filling.draw_filled_polygon(surface, polys['tarja'], BLACK, BLACK)
             p_line = polys['tarja_line']
             primitives.draw_line(surface, int(p_line[0][0]), int(p_line[0][1]), int(p_line[1][0]), int(p_line[1][1]), YELLOW)
 
-            if m_transform is None:
+            if not getattr(self, 'is_animating', False):
                 try:
                     font = pygame.font.SysFont("Courier", 14, bold=True)
                     clean_name = self.id.replace("_", " ").upper()
@@ -168,7 +173,7 @@ class Card:
                 self.is_animating = False
                 self.dirty = True
 
-    def draw(self, surface, texture_verso):
+    def draw(self, surface, texture_verso, m_view=None):
         if not self.is_animating:
             # Se o mouse estiver em cima E a carta estiver virada para baixo
             if getattr(self, 'is_hovered', False) and self.state == 0:
@@ -183,15 +188,33 @@ class Card:
                 m_final = transformations.multiply_matrices(m_rise, m_final)
                 m_final = transformations.multiply_matrices(m_pos, m_final)
 
+                if m_view is not None:
+                    m_final = transformations.multiply_matrices(m_view, m_final)
+
                 self._render_polygons(surface, False, texture_verso, m_transform=m_final)
             else:
                 target = self.surface_back if self.state == 0 else self.surface_front
                 if target:
-                    surface.blit(target, (self.x, self.y))
+                    # Aplica a Câmera no Cache Otimizado (Translação e Zoom)
+                    if m_view is not None:
+                        sx, sy = m_view[0][0], m_view[1][1]
+                        tx, ty = m_view[0][2], m_view[1][2]
+                        screen_x = int(self.x * sx + tx)
+                        screen_y = int(self.y * sy + ty)
+
+                        if sx != 1.0 or sy != 1.0:
+                            scaled_w = int(target.get_width() * sx)
+                            scaled_h = int(target.get_height() * sy)
+                            if scaled_w > 0 and scaled_h > 0:
+                                scaled_target = pygame.transform.scale(target, (scaled_w, scaled_h))
+                                surface.blit(scaled_target, (screen_x, screen_y))
+                        else:
+                            surface.blit(target, (screen_x, screen_y))
+                    else:
+                        surface.blit(target, (self.x, self.y))
             return
 
         cx, cy = self.width / 2, self.height / 2
-
         m_center = transformations.translation(-cx, -cy)
         m_scale = transformations.scale(self.scale_x, 1.0)
         m_pos = transformations.translation(cx + self.x, cy + self.y)
@@ -199,7 +222,9 @@ class Card:
         m_final = transformations.multiply_matrices(m_scale, m_center)
         m_final = transformations.multiply_matrices(m_pos, m_final)
 
+        if m_view is not None:
+            m_final = transformations.multiply_matrices(m_view, m_final)
+
         is_front = self.state == 1
         tex_actual = self.texture_professor if is_front else texture_verso
-
         self._render_polygons(surface, is_front, tex_actual, m_transform=m_final)

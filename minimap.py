@@ -1,5 +1,4 @@
-import pygame
-from library import transformations
+from library import primitives, transformations
 from library import filling
 
 class Minimap:
@@ -13,11 +12,12 @@ class Minimap:
         self.Vymax = view_y + view_height
         self.viewport = (self.Vxmin, self.Vymin, self.Vxmax, self.Vymax)
 
-        # Cores padrão do Minimapa
-        self.COLOR_BG = (30, 40, 50)         # Fundo escuro do radar
-        self.COLOR_BORDER = (241, 196, 15)   # Borda Amarela
+        # Cores atualizadas para combinar com a Status Bar
+        self.COLOR_BG = (0, 0, 0)            # Fundo Preto Puro
+        self.COLOR_BORDER = (255, 193, 7)    # Borda Amarela (MUSTARD_YELLOW)
+
         self.COLOR_HIDDEN = (236, 240, 241)  # Carta para baixo (Branco)
-        self.COLOR_FLIPPED = (241, 196, 15)  # Carta virada agora (Amarelo)
+        self.COLOR_FLIPPED = (255, 193, 7)   # Carta virada agora (Amarelo)
         self.COLOR_MATCH = (46, 204, 113)    # Par encontrado (Verde)
         self.COLOR_MISMATCH = (231, 76, 60)  # Par errado (Vermelho)
 
@@ -26,7 +26,7 @@ class Minimap:
         Calcula as matrizes e desenha o minimapa na tela principal.
         """
         # 1. A Janela do Mundo (O que a câmera está capturando)
-        # Fixamos a câmera para pegar a mesa inteira
+        # Fixamos a câmera para pegar a mesa inteira (Radar estático)
         Wxmin, Wymin = 180, 130
         Wxmax, Wymax = 1120, 720
         janela_mundo = (Wxmin, Wymin, Wxmax, Wymax)
@@ -49,15 +49,19 @@ class Minimap:
             # Aplica a matriz de Escala/Translação para esmagar para o radar
             vertices_mini = transformations.apply_transformation(matriz_camera, vertices_reais)
 
-            # Lógica de cores do status da carta
-            if card.state == 1 and card not in board.flipped_cards:
+            # Lógica BLINDADA de cores do status da carta
+            if getattr(card, 'is_matched', False):
+                # Se a flag foi ativada (Par Acertado), é VERDE e acabou!
                 cor = self.COLOR_MATCH
             elif card in board.flipped_cards:
-                if board.is_locked:
+                if getattr(board, 'is_locked', False):
+                    # Acabou de errar (Trava ligada) = Vermelho
                     cor = self.COLOR_MISMATCH
                 else:
+                    # Sendo analisada = Amarelo
                     cor = self.COLOR_FLIPPED
             else:
+                # Escondida (Ou no processo de esconder via animação) = Branco
                 cor = self.COLOR_HIDDEN
 
             # Desenha o polígono em miniatura!

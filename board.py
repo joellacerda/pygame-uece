@@ -1,6 +1,7 @@
 import random
 from card import Card
-import pygame
+from library import camera
+
 
 class Board:
     """
@@ -135,6 +136,8 @@ class Board:
 
         if card1.id == card2.id:
             # É um par! As cartas permanecem no state 1 para sempre.
+            card1.is_matched = True
+            card2.is_matched = True
             self.matches_found += 1
             self.flipped_cards.clear()
             return "MATCH"
@@ -159,24 +162,15 @@ class Board:
         """Verifica se todos os pares foram encontrados."""
         return self.matches_found == self.total_pairs
 
-    def draw(self, surface, texture_verso, bg_color, force=False):
-        """
-        Renderiza o tabuleiro usando Z-Order (Algoritmo do Pintor).
-        Garante que cartas em animação/hover fiquem fisicamente por cima das outras.
-        """
+    def draw(self, surface, texture_verso, bg_color, camera):
+        # Pega a matriz de transformação Janela -> Viewport da câmera
+        m_view = camera.get_matrix()
 
-        total_width = (self.card_width + self.spacing_x) * 6
-        total_height = (self.card_height + self.spacing_y) * 4
-
-        board_area = (self.start_x - 30, self.start_y - 30, total_width + 60, total_height + 60)
-        pygame.draw.rect(surface, bg_color, board_area)
-
+        # Desenha cartas em ordem (Z-Order)
         for card in self.cards:
             if not getattr(card, 'is_hovered', False) and not card.is_animating:
-                card.draw(surface, texture_verso)
-                card.dirty = False
+                card.draw(surface, texture_verso, m_view)
 
         for card in self.cards:
             if getattr(card, 'is_hovered', False) or card.is_animating:
-                card.draw(surface, texture_verso)
-                card.dirty = False
+                card.draw(surface, texture_verso, m_view)

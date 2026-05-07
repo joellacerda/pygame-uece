@@ -54,20 +54,20 @@ def apply_transformation(matrix, vertices):
     """
     if not vertices:
         return []
-    
+
     # 1. Converte lista de (x, y) para matriz NumPy (N, 2)
     v_array = np.array(vertices)
-    
+
     # 2. Adiciona coluna de 1s para coordenadas homogêneas → (N, 3)
     # Ex: [[x1, y1, 1], [x2, y2, 1], ...]
     ones = np.ones((v_array.shape[0], 1))
     v_homogeneous = np.hstack([v_array, ones])
-    
+
     # 3. Multiplica todos os pontos pela matriz de uma vez
     # v_transformed = V * M^T (ou M * V^T)
     # Usamos '.T' na matriz para alinhar as dimensões (N,3) @ (3,3)
     result = v_homogeneous @ matrix.T
-    
+
     # 4. Retorna apenas as colunas X e Y, convertendo para int
     return [(int(round(x)), int(round(y))) for x, y in result[:, :2]]
 
@@ -78,9 +78,9 @@ def window_to_viewport(window, viewport):
     Wxmin, Wymin, Wxmax, Wymax = window
     Vxmin, Vymin, Vxmax, Vymax = viewport
 
-    
+
     # sx = (Vxmax - Vxmin) / (Wxmax - Wxmin)
-    # sy = (Vymin - Vymax) / (Wymax - Wymin)  
+    # sy = (Vymin - Vymax) / (Wymax - Wymin)
 
     # 1. Escala Direta (Sem inverter Vymin e Vymax)
     sx = (Vxmax - Vxmin) / (Wxmax - Wxmin)
@@ -96,7 +96,7 @@ def window_to_viewport(window, viewport):
 
     # Passo 3: Translação Positiva (Posiciona no canto da tela)
     # ---> O ERRO ESTAVA AQUI! TEM QUE SER Vymin <---
-    m_trans2 = translation(Vxmin, Vymin) 
+    m_trans2 = translation(Vxmin, Vymin)
 
     # Retorna a multiplicação (T2 * S * T1)
     return m_trans2 @ m_scale @ m_trans1
