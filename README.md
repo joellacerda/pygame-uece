@@ -40,7 +40,7 @@ source .venv/bin/activate
    Com o ambiente ativado, instale a biblioteca principal:
 
 ```bash
-pip install pygame
+pip install pygame numpy
 ```
 
 ## 🎮 Como rodar a aplicação
