@@ -16,7 +16,7 @@ class Minimap:
         # Cores padrão do Minimapa
         self.COLOR_BG = (30, 40, 50)         # Fundo escuro do radar
         self.COLOR_BORDER = (241, 196, 15)   # Borda Amarela
-        self.COLOR_HIDDEN = (236, 240, 241)  # Carta pra baixo (Branco)
+        self.COLOR_HIDDEN = (236, 240, 241)  # Carta para baixo (Branco)
         self.COLOR_FLIPPED = (241, 196, 15)  # Carta virada agora (Amarelo)
         self.COLOR_MATCH = (46, 204, 113)    # Par encontrado (Verde)
         self.COLOR_MISMATCH = (231, 76, 60)  # Par errado (Vermelho)
@@ -46,7 +46,7 @@ class Minimap:
             # Pega as coordenadas gigantes da mesa
             vertices_reais = card.get_vertices()
 
-            # Aplica a matriz de Escala/Translação para esmagar pro radar
+            # Aplica a matriz de Escala/Translação para esmagar para o radar
             vertices_mini = transformations.apply_transformation(matriz_camera, vertices_reais)
 
             # Lógica de cores do status da carta

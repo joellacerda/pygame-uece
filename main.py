@@ -5,6 +5,7 @@ from library import filling
 from button import Button
 import pygame
 import sys
+import math
 from minimap import Minimap
 
 # pygame setup
@@ -142,8 +143,8 @@ def render_logo_static(font_LOGO):
     return surf
 
 def render_status_bar(font_STATUS, matches, total_pairs, elapsed_time):
-    surf = pygame.Surface((896, 83)) # Altura diminuída em 10 pixels
-    STATUS_RECT_LOCAL = [(0, 0), (886, 0), (886, 73), (0, 73)]
+    surf = pygame.Surface((896, 63))
+    STATUS_RECT_LOCAL = [(0, 0), (890, 0), (890, 53), (0, 53)]
     filling.draw_filled_polygon(surf, STATUS_RECT_LOCAL, BLACK, MUSTARD_YELLOW)
 
     total_seconds = elapsed_time // 1000
@@ -157,6 +158,66 @@ def render_status_bar(font_STATUS, matches, total_pairs, elapsed_time):
     surf.blit(matches_text, (12, 16))
     surf.blit(time_text, (730, 16))
     return surf
+
+def draw_brazil_flag(surface, x, y, width):
+    height = int(width * 14 / 20)
+    
+    # Cores Oficiais
+    GREEN = (0, 156, 59)
+    YELLOW = (255, 223, 0)
+    BLUE = (0, 39, 118)
+    WHITE = (255, 255, 255)
+
+    # 1. Retângulo Verde (Fundo) com scanline_fill_gradient
+    rect_vertices = [(x, y), (x + width, y), (x + width, y + height), (x, y + height)]
+    rect_colors = [
+        (0, 180, 70),  # Verde-claro (topo-esquerda)
+        GREEN,          # Topo-direita
+        (0, 100, 30),  # Verde-escuro (baixo-direita)
+        GREEN           # Baixo-esquerda
+    ]
+    filling.scanline_fill_gradient(surface, rect_vertices, rect_colors)
+
+    # 2. Losango Amarelo com scanline_fill
+    margin = (width / 20.0) * 1.7
+    rhombus_vertices = [
+        (x + width / 2, y + margin),           # Superior
+        (x + width - margin, y + height / 2),  # Direita
+        (x + width / 2, y + height - margin),  # Inferior
+        (x + margin, y + height / 2)           # Esquerda
+    ]
+    filling.scanline_fill(surface, rhombus_vertices, YELLOW)
+
+    # 3. Círculo Azul com scanline_fill_gradient
+    radius = (width / 20.0) * 3.5
+    cx, cy = x + width / 2, y + height / 2
+    
+    # Aproximação do círculo por um polígono para o gradiente
+    circle_vertices = []
+    circle_colors = []
+    for i in range(37):
+        angle = math.radians(i * 10)
+        px = cx + radius * math.cos(angle)
+        py = cy + radius * math.sin(angle)
+        circle_vertices.append((px, py))
+        
+        t = (py - (cy - radius)) / (2 * radius)
+        color = filling.interpolate_color((60, 100, 255), BLUE, t)
+        circle_colors.append(color)
+    
+    filling.scanline_fill_gradient(surface, circle_vertices, circle_colors)
+    primitives.draw_circle(surface, int(cx), int(cy), int(radius), BLUE)
+
+    # 4. Faixa Branca com elipses
+    for offset in range(-1, 2):
+        primitives.draw_ellipse(
+            surface, 
+            int(cx), 
+            int(cy + radius * 0.2) + offset, 
+            int(radius * 1.15), 
+            int(radius * 0.45), 
+            WHITE
+        )
 
 def victory_screen(elapsed_time):
     """Exibe a tela final de vitória com o tempo total."""
@@ -173,17 +234,20 @@ def victory_screen(elapsed_time):
     while True:
         screen.fill(SEA_DARK_BLUE)
 
-        # Retângulo central de vitória com linhas MUSTARD_YELLOW
-        VICTORY_RECT = [(340, 240), (940, 240), (940, 480), (340, 480)]
+        # Retângulo central de vitória expandido para caber a bandeira
+        VICTORY_RECT = [(340, 180), (940, 180), (940, 540), (340, 540)]
         filling.draw_filled_polygon(screen, VICTORY_RECT, DARK_BLUE_GRAY, MUSTARD_YELLOW)
 
-        # Texto "Você Venceu!" e Tempo na cor MUSTARD_YELLOW
+        # Desenha a bandeira do Brasil
+        draw_brazil_flag(screen, 540, 200, 200)
+
+        # Texto "Você Venceu!" e Tempo ajustados
         text_victory = font_TITLE.render("Você Venceu!", True, MUSTARD_YELLOW)
-        rect_victory = text_victory.get_rect(center=(640, 330))
+        rect_victory = text_victory.get_rect(center=(640, 390))
         screen.blit(text_victory, rect_victory)
 
         text_time = font_TIME.render(time_str, True, MUSTARD_YELLOW)
-        rect_time = text_time.get_rect(center=(640, 410))
+        rect_time = text_time.get_rect(center=(640, 480))
         screen.blit(text_time, rect_time)
 
         for event in pygame.event.get():
@@ -258,7 +322,10 @@ def play():
         radar.draw(screen, game_board)
 
         if game_board.is_game_over():
-            if current_time - celebration_start > 4000:
+            if celebration_start == 0:
+                celebration_start = current_time
+
+            if current_time - celebration_start > 1500:
                     pygame.display.update()
                     victory_screen(elapsed_time)
 
