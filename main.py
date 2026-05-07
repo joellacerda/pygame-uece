@@ -114,7 +114,7 @@ def main_menu():
 
         MENU_MOUSE_POS = pygame.mouse.get_pos()
 
-        font_MENU = pygame.font.SysFont("Montserrat", 60)
+        font_MENU = pygame.font.SysFont("Courier", 80)
         MENU_TEXT = font_MENU.render("MEMORY", True, MUSTARD_YELLOW)
         MENU_TEXT_2 = font_MENU.render("LEAK", True, MUSTARD_YELLOW)
         MENU_RECT = MENU_TEXT.get_rect(center=(640, 200))
@@ -149,6 +149,7 @@ def render_logo_static(font_LOGO):
     surf = pygame.Surface((1280, 44))
     LOGO_VERTICES = [(0, 0), (1280, 0), (1280, 44), (0, 44)]
     filling.draw_filled_polygon(surf, LOGO_VERTICES, WHITE, WHITE)
+
     LOGO_TEXT = font_LOGO.render("UECE MEMORY", True, SEA_DARK_BLUE)
     LOGO_RECT = LOGO_TEXT.get_rect(midleft=(20, 22))
     surf.blit(LOGO_TEXT, LOGO_RECT)
@@ -295,6 +296,13 @@ def play():
     MISMATCH_EVENT = pygame.USEREVENT + 1
     MATCH_EVENT = pygame.USEREVENT + 2
 
+    # Botão de Menu e Restart (posições na Screen Space)
+    font_UI_SMALL = pygame.font.SysFont("Courier", 14, bold=True)
+
+    # Vértices para os botões no topo (Tab Bar)
+    RESTART_VERTS = [(900, 7), (1070, 7), (1070, 37), (900, 37)]
+    MENU_VERTS    = [(1085, 7), (1265, 7), (1265, 37), (1085, 37)]
+
     while True:
         # ==========================================
         # 1. TRATAMENTO DE INPUTS E EVENTOS
@@ -311,7 +319,7 @@ def play():
                 pygame.quit()
                 sys.exit()
 
-            # --- EVENTOS DE ÁUDIO DO COLEGA ---
+            # --- EVENTOS DE ÁUDIO ---
             if event.type == MISMATCH_EVENT:
                 pygame.time.set_timer(MISMATCH_EVENT, 0)   # cancela o timer
                 mismatch_sound.play()
@@ -320,40 +328,61 @@ def play():
                 pygame.time.set_timer(MATCH_EVENT, 0)      # cancela o timer
                 match_sound.play()
 
-            # --- EVENTOS DE RATO COM CÂMERA (SUA ALTERAÇÃO) ---
+            # --- LÓGICA DO MOUSE (UI vs MUNDO) ---
             if event.type in [pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN]:
-                mouse_x, mouse_y = pygame.mouse.get_pos()
+                mouse_pos = pygame.mouse.get_pos()
+                mouse_x, mouse_y = mouse_pos
 
-                # Desfazemos o Zoom e o Pan para saber onde o mouse está no MUNDO
-                m_view = main_camera.get_matrix()
-                sx, sy = m_view[0][0], m_view[1][1]
-                tx, ty = m_view[0][2], m_view[1][2]
-                world_mouse_x = (mouse_x - tx) / sx
-                world_mouse_y = (mouse_y - ty) / sy
-
-                if event.type == pygame.MOUSEMOTION:
-                    game_board.handle_mouse_motion(world_mouse_x, world_mouse_y)
-
+                # 1. TENTA INTERAGIR COM A INTERFACE FIXA (SCREEN SPACE) PRIMEIRO
+                clicked_ui = False
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    resultado = game_board.handle_click(world_mouse_x, world_mouse_y)
+                    # Clique no Botão Reiniciar
+                    if BTN_RESTART.checkForInput(mouse_pos):
+                        game_board.setup_board(professors_data, img_uece)
+                        game_board.matches_found = 0
+                        game_board.flipped_cards.clear()
+                        game_board.is_locked = False
+                        start_ticks = pygame.time.get_ticks()
+                        clicked_ui = True
 
-                    if resultado == "MISMATCH":
-                        cardflip_sound.play()
-                        pygame.time.set_timer(MISMATCH_EVENT, 400) # delay som de erro
-                        waiting_for_delay = True
-                        delay_start_time = pygame.time.get_ticks() + 400
+                    # Clique no Botão Voltar Menu
+                    elif BTN_MENU.checkForInput(mouse_pos):
+                        pygame.mixer.music.stop()
+                        main_menu()
+                        return # Sai da função play e volta pro menu
 
-                    elif resultado == "MATCH":
-                        cardflip_sound.play()
-                        pygame.time.set_timer(MATCH_EVENT, 400) # delay som acerto
-                        waiting_for_delay = True
-                        delay_start_time = pygame.time.get_ticks() + 400
+                # 2. SE NÃO CLICOU NA UI, INTERAGE COM O TABULEIRO (WORLD SPACE)
+                if not clicked_ui:
+                    # Desfazemos o Zoom e o Pan para saber onde o mouse está no MUNDO
+                    m_view = main_camera.get_matrix()
+                    sx, sy = m_view[0][0], m_view[1][1]
+                    tx, ty = m_view[0][2], m_view[1][2]
+                    world_mouse_x = (mouse_x - tx) / sx
+                    world_mouse_y = (mouse_y - ty) / sy
 
-                    elif resultado == "IGNORED":
-                        no_interaction_sound.play()
+                    if event.type == pygame.MOUSEMOTION:
+                        game_board.handle_mouse_motion(world_mouse_x, world_mouse_y)
 
-                    elif resultado == "FLIPPED":
-                        cardflip_sound.play()
+                    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                        resultado = game_board.handle_click(world_mouse_x, world_mouse_y)
+
+                        if resultado == "MISMATCH":
+                            cardflip_sound.play()
+                            pygame.time.set_timer(MISMATCH_EVENT, 400) # delay som de erro
+                            waiting_for_delay = True
+                            delay_start_time = pygame.time.get_ticks() + 400
+
+                        elif resultado == "MATCH":
+                            cardflip_sound.play()
+                            pygame.time.set_timer(MATCH_EVENT, 400) # delay som acerto
+                            waiting_for_delay = True
+                            delay_start_time = pygame.time.get_ticks() + 400
+
+                        elif resultado == "IGNORED":
+                            no_interaction_sound.play()
+
+                        elif resultado == "FLIPPED":
+                            cardflip_sound.play()
 
             # --- EVENTOS DE ZOOM ---
             if event.type == pygame.KEYDOWN:
@@ -410,6 +439,9 @@ def play():
         screen.blit(logo_surface, (0, 0))
         screen.blit(status_surface, (208, 64))
         radar.draw(screen, game_board)
+
+        BTN_RESTART = Button(screen, RESTART_VERTS, "REINICIAR", font_UI_SMALL, WHITE, ROYAL_DARK_BLUE, SEA_DARK_BLUE)
+        BTN_MENU    = Button(screen, MENU_VERTS, "VOLTAR MENU", font_UI_SMALL, WHITE, GRAPHITE, BLACK)
 
         # 4. EXIBIÇÃO NO MONITOR
         pygame.display.update()
